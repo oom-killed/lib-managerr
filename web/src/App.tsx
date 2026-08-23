@@ -1,18 +1,12 @@
-import { createResource } from "solid-js";
-
-async function fetchHealth() {
-	const res = await fetch("/api/health");
-	return (await res.json()) as { status: string };
-}
+import { Route, Router } from "@solidjs/router";
+import { AppShell } from "./AppShell.tsx";
+import Dashboard from "./routes/Dashboard.tsx";
 
 function App() {
-	const [health] = createResource(fetchHealth);
-
 	return (
-		<main>
-			<h1>lib-managerr</h1>
-			<p>backend status: {health.loading ? "checking..." : health()?.status}</p>
-		</main>
+		<Router root={AppShell}>
+			<Route path="/" component={Dashboard} />
+		</Router>
 	);
 }
 

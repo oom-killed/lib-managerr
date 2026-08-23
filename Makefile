@@ -21,8 +21,11 @@ build-backend: sync-web
 build: build-backend
 
 lint:
-	cd web && pnpm lint
+	pnpm lint
 	cd backend && gofmt -l . && go vet ./...
+
+storybook:
+	pnpm --filter @lib-managerr/ui storybook
 
 clean:
 	rm -rf web/dist backend/internal/webui/dist bin

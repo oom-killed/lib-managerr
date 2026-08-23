@@ -6,9 +6,11 @@ Fresh design from scratch — not a port of anything.
 ## Stack
 
 - **Backend**: Go, standard library `net/http` (Go 1.22+ `ServeMux` routing) — no framework.
-- **Frontend**: SolidJS + TypeScript, built with Vite.
-- **Package manager**: pnpm (frontend only; Go uses modules).
-- **Lint/format**: `gofmt`/`go vet` for Go; [Biome](https://biomejs.dev) for TS/JS (lint + format in one tool).
+- **Frontend**: SolidJS + TypeScript, built with Vite, styled with Tailwind CSS v4, routed with `@solidjs/router`.
+- **Package manager**: pnpm workspace (frontend only; Go uses modules) — root `pnpm-workspace.yaml` covers
+  `web` and `packages/*`.
+- **Lint/format**: `gofmt`/`go vet` for Go; [Biome](https://biomejs.dev) for TS/JS/CSS across the whole
+  workspace (single root `biome.json`, single shared `@biomejs/biome` devDependency at the workspace root).
 
 ## Version policy
 
@@ -21,14 +23,37 @@ Versions confirmed against official sources at project init (2026-08-23): Go 1.2
 ("Krypton" — deliberately the LTS line, not the newer 26.x Current release, since Current releases have a
 much shorter support window), pnpm 11.23.0, Vite 8.2.2, solid-js 1.9.15, TypeScript 7.0.2, @biomejs/biome
 2.5.10. TypeScript 7 (the new Go-ported compiler) was verified working with `vite-plugin-solid` and `tsc -b`
-before adopting it. Don't treat these as ceilings — check for newer releases before starting new work.
+before adopting it. Added later in the same style: `@solidjs/router` 1.0.0, Tailwind CSS 4.3.3
+(`@tailwindcss/vite`), Storybook 10.5.10 with `storybook-solidjs-vite` 10.7.1 (the official `storybook-solidjs`
+package is deprecated in favor of this Vite-based one — checked peer deps against our Storybook/Vite/solid-js
+versions before adopting). Don't treat any of these as ceilings — check for newer releases before starting
+new work.
 
 ## Repository layout
 
 ```
-backend/    Go module (github.com/oom-killed/lib-managerr) — cmd/, internal/
-web/        SolidJS + TypeScript app (Vite)
+backend/       Go module (github.com/oom-killed/lib-managerr) — cmd/, internal/
+web/           SolidJS + TypeScript app (Vite) — routes, pages, business-logic-bound components
+packages/ui/   @lib-managerr/ui — low-level, presentational-only component library + Storybook
 ```
+
+## Component architecture
+
+`packages/ui` (`@lib-managerr/ui`) holds **low-level components only** — no business logic, no data
+fetching, no routing/API awareness. A component there must be understandable and usable with zero knowledge
+of this app (e.g. `NavLink` takes `href`/`label`/`isActive` as plain props and an `as` prop to let a caller
+inject a router-aware element type — it never imports `@solidjs/router` itself). It ships as raw
+TS/TSX source (no build step); `web`'s Vite/Tailwind pipeline compiles it directly, and Tailwind's
+`@source` directive in `web/src/index.css` scans `packages/ui/src` so its utility classes make it into the
+final CSS.
+
+`web` binds business logic to those primitives via bound wrapper components (e.g. `web/src/AppShell.tsx`
+composes `@lib-managerr/ui`'s `Navbar`/`Sidebar`/`NavLink` with real routes and `useLocation`-driven active
+state). New reusable-but-presentational pieces go in `packages/ui`; anything that knows about routes, API
+calls, or app-specific state stays in `web` as a binding layer on top.
+
+Every component in `packages/ui` gets a co-located `*.stories.tsx` file. Run `make storybook` to browse the
+catalog and check components in isolation.
 
 ## Build & run
 
@@ -45,7 +70,9 @@ make build         # pnpm build -> sync web/dist into backend/internal/webui/dis
 `backend/internal/webui/dist` is generated (gitignored except a `.gitkeep` placeholder so `go:embed`
 has something to embed on a fresh checkout) — never edit it directly, it's overwritten by `make build`.
 
-**Lint**: `make lint` (Biome for `web/`, `gofmt`/`go vet` for `backend/`).
+**Lint**: `make lint` (Biome across the whole JS/TS workspace, `gofmt`/`go vet` for `backend/`).
+
+**Storybook**: `make storybook` — component catalog for `packages/ui`, at localhost:6006.
 
 ## Conventions
 

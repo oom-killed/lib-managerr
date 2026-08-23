@@ -4,8 +4,9 @@ backend/internal/webui/dist/*
 !backend/internal/webui/dist/.gitkeep
 
 # Node
-web/node_modules/
+node_modules/
 web/dist/
+packages/*/storybook-static/
 
 # Editor/OS
 .DS_Store

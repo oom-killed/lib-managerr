@@ -1,0 +1,7 @@
+packages:
+  - web
+  - packages/*
+allowBuilds:
+  esbuild: true
+minimumReleaseAgeExclude:
+  - storybook-solidjs-vite@10.7.1
