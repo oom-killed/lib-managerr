@@ -23,10 +23,28 @@ type I18nContextValue = {
 
 const I18nContext = createContext<I18nContextValue>();
 
+const STORAGE_KEY = "lib-managerr:locale";
+
+function isLocale(value: string): value is Locale {
+	return value in dictionaries;
+}
+
+function readStoredLocale(): Locale | null {
+	const value = sessionStorage.getItem(STORAGE_KEY);
+	return value !== null && isLocale(value) ? value : null;
+}
+
 export function I18nProvider(props: { children?: JSX.Element }) {
-	const [locale, setLocale] = createSignal<Locale>("en");
+	const [locale, setLocaleSignal] = createSignal<Locale>(
+		readStoredLocale() ?? "en",
+	);
 	const flatDict = () => i18n.flatten(dictionaries[locale()]);
 	const t = i18n.translator(flatDict, i18n.resolveTemplate);
+
+	const setLocale = (next: Locale) => {
+		setLocaleSignal(next);
+		sessionStorage.setItem(STORAGE_KEY, next);
+	};
 
 	return (
 		<I18nContext.Provider value={{ locale, setLocale, t }}>
