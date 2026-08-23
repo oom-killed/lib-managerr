@@ -1,0 +1,12 @@
+# Go
+/bin/
+backend/internal/webui/dist/*
+!backend/internal/webui/dist/.gitkeep
+
+# Node
+web/node_modules/
+web/dist/
+
+# Editor/OS
+.DS_Store
+HANDOFF.md
