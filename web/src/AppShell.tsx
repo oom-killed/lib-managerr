@@ -3,7 +3,10 @@ import { A, useLocation } from "@solidjs/router";
 import type { JSX } from "solid-js";
 import { useI18n } from "./i18n/index.tsx";
 
-const NAV_ITEMS = [{ href: "/", labelKey: "nav.dashboard" } as const];
+const NAV_ITEMS = [
+	{ href: "/", labelKey: "nav.dashboard" },
+	{ href: "/settings", labelKey: "nav.settings" },
+] as const;
 
 export function AppShell(props: { children?: JSX.Element }) {
 	const location = useLocation();
