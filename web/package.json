@@ -10,6 +10,7 @@
 	},
 	"dependencies": {
 		"@lib-managerr/ui": "workspace:*",
+		"@solid-primitives/i18n": "2.2.1",
 		"@solidjs/router": "1.0.0",
 		"@tailwindcss/vite": "4.3.3",
 		"solid-js": "^1.9.14",

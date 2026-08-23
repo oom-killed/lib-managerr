@@ -26,8 +26,8 @@ much shorter support window), pnpm 11.23.0, Vite 8.2.2, solid-js 1.9.15, TypeScr
 before adopting it. Added later in the same style: `@solidjs/router` 1.0.0, Tailwind CSS 4.3.3
 (`@tailwindcss/vite`), Storybook 10.5.10 with `storybook-solidjs-vite` 10.7.1 (the official `storybook-solidjs`
 package is deprecated in favor of this Vite-based one — checked peer deps against our Storybook/Vite/solid-js
-versions before adopting). Don't treat any of these as ceilings — check for newer releases before starting
-new work.
+versions before adopting), `@solid-primitives/i18n` 2.2.1. Don't treat any of these as ceilings — check for
+newer releases before starting new work.
 
 ## Repository layout
 
@@ -54,6 +54,14 @@ calls, or app-specific state stays in `web` as a binding layer on top.
 
 Every component in `packages/ui` gets a co-located `*.stories.tsx` file. Run `make storybook` to browse the
 catalog and check components in isolation.
+
+## Internationalization
+
+User-facing strings live in `web/src/i18n/<locale>.ts` (nested dictionaries), accessed via `useI18n()`'s `t`
+function (`web/src/i18n/index.tsx`, built on `@solid-primitives/i18n`). Only `en` exists today — add new
+locale files and register them in `dictionaries` in `web/src/i18n/index.tsx` when a second language is
+needed. `packages/ui` stays i18n-agnostic: its components take already-resolved strings as props (`label`,
+`children`), consistent with the no-business-logic rule above — translation only happens in `web`.
 
 ## Build & run
 
