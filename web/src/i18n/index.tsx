@@ -1,10 +1,11 @@
 import * as i18n from "@solid-primitives/i18n";
 import { createContext, createSignal, type JSX, useContext } from "solid-js";
 import { dict as en } from "./en.ts";
+import { dict as fr } from "./fr.ts";
 
-export type Locale = "en";
+export type Locale = "en" | "fr";
 
-const dictionaries = { en } satisfies Record<Locale, typeof en>;
+const dictionaries = { en, fr } satisfies Record<Locale, typeof en>;
 
 type Dictionary = i18n.Flatten<typeof en>;
 
