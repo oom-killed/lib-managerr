@@ -5,6 +5,7 @@ import { useI18n } from "./i18n/index.tsx";
 
 const NAV_ITEMS = [
 	{ href: "/", labelKey: "nav.dashboard" },
+	{ href: "/libraries", labelKey: "nav.libraries" },
 	{ href: "/settings", labelKey: "nav.settings" },
 ] as const;
 
