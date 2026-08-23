@@ -7,6 +7,12 @@ export type Locale = "en" | "fr";
 
 const dictionaries = { en, fr } satisfies Record<Locale, typeof en>;
 
+// Native names, shown regardless of the active locale — not translated.
+export const LOCALE_NAMES: Record<Locale, string> = {
+	en: "English",
+	fr: "Français",
+};
+
 type Dictionary = i18n.Flatten<typeof en>;
 
 type I18nContextValue = {

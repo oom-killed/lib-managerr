@@ -10,6 +10,7 @@ export type Dict = {
 	};
 	settings: {
 		title: string;
+		locale: string;
 	};
 };
 
@@ -25,5 +26,6 @@ export const dict: Dict = {
 	},
 	settings: {
 		title: "Settings",
+		locale: "Language",
 	},
 };

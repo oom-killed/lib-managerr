@@ -12,5 +12,6 @@ export const dict: Dict = {
 	},
 	settings: {
 		title: "Paramètres",
+		locale: "Langue",
 	},
 };
