@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/oom-killed/lib-managerr/internal/db"
+	"github.com/oom-killed/lib-managerr/internal/entdb"
 	"github.com/oom-killed/lib-managerr/internal/webui"
 )
 
@@ -33,14 +34,19 @@ func spaHandler(fsys fs.FS) http.Handler {
 }
 
 func main() {
-	sqlDB, err := db.Open()
+	sqlDB, engine, err := db.Open()
 	if err != nil {
 		log.Fatalf("open database: %v", err)
 	}
-	defer sqlDB.Close()
 
-	if err := sqlDB.PingContext(context.Background()); err != nil {
-		log.Fatalf("connect to database: %v", err)
+	client, err := entdb.New(sqlDB, engine)
+	if err != nil {
+		log.Fatalf("build database client: %v", err)
+	}
+	defer client.Close()
+
+	if err := client.Schema.Create(context.Background()); err != nil {
+		log.Fatalf("run schema migration: %v", err)
 	}
 
 	mux := http.NewServeMux()

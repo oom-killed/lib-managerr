@@ -27,10 +27,9 @@ before adopting it. Added later in the same style: `@solidjs/router` 1.0.0, Tail
 (`@tailwindcss/vite`), Storybook 10.5.10 with `storybook-solidjs-vite` 10.7.1 (the official `storybook-solidjs`
 package is deprecated in favor of this Vite-based one — checked peer deps against our Storybook/Vite/solid-js
 versions before adopting), `@solid-primitives/i18n` 2.2.1, `modernc.org/sqlite` 1.57.0, `github.com/jackc/pgx/v5`
-5.10.0 (verified against a real containerized PostgreSQL, not just SQLite, before adopting). `entgo.io/ent`
-0.14.6 is the confirmed-latest version to use once the first entity is added — not in go.mod yet since
-nothing imports it (an ent client can't be generated with zero schemas defined). Don't treat any of these as
-ceilings — check for newer releases before starting new work.
+5.10.0, `entgo.io/ent` 0.14.6 (all three DB-layer versions verified against a real containerized PostgreSQL
+as well as SQLite before adopting, not just compiled). Don't treat any of these as ceilings — check for newer
+releases before starting new work.
 
 ## Repository layout
 
@@ -71,16 +70,26 @@ in `web/src/i18n/index.tsx`. Selected locale persists to `sessionStorage` (`lib-
 ## Database
 
 Supports both SQLite and PostgreSQL, selected by the `DATABASE_URL` env var's scheme (`sqlite://` or
-`postgres://`/`postgresql://`). Unset defaults to `sqlite://data/lib-managerr.db` (data dir auto-created) —
-zero-config for the common self-hosted case. Connection/driver-selection logic lives in `backend/internal/db`
-(`db.Open()`), using `modernc.org/sqlite` (pure Go, no CGO — keeps single-binary cross-compilation simple)
-and `github.com/jackc/pgx/v5`'s `stdlib` shim.
+`postgres://`/`postgresql://`). Unset defaults to `sqlite://data/lib-managerr.db` (data dir auto-created,
+relative to the process's working directory) — zero-config for the common self-hosted case.
+`backend/internal/db` (`db.Open()`) picks the driver — `modernc.org/sqlite` (pure Go, no CGO — keeps
+single-binary cross-compilation simple) or `github.com/jackc/pgx/v5`'s `stdlib` shim — and returns an
+`Engine` value alongside the `*sql.DB` so callers know which dialect they got. The SQLite DSN always
+includes `?_pragma=foreign_keys(1)`; without it ent's foreign-key edges aren't enforced.
 
-Schema/queries will be handled by [ent](https://entgo.io) once the first entity exists (schema-as-Go-code in
-`backend/ent/schema`, generates a type-safe client that works against either engine without hand-written
-per-dialect SQL) — not wired in yet, since ent has no concept of a client with zero entities. Migrations
-start with ent's built-in schema sync (`client.Schema.Create(ctx)`); a versioned migration tool (e.g. Atlas)
-is a later addition if schema changes in production ever need more control than "sync to current shape."
+Schema/queries go through [ent](https://entgo.io) (`backend/internal/entdb` builds the `*ent.Client` from
+`db.Open()`'s result, mapping `Engine` to ent's dialect name). Schema is defined once in Go
+(`backend/ent/schema/*.go`) and generates a type-safe client (`backend/ent/`, committed — run
+`go generate ./ent/...` after editing schema files) that works against either engine with no hand-written
+per-dialect SQL. Migrations are ent's built-in schema sync (`client.Schema.Create(ctx)`, run at startup in
+`main.go`); a versioned migration tool (e.g. Atlas) is a later addition if schema changes in production ever
+need more control than "sync to current shape."
+
+First entities: `Connection` (credentials to reach one server — `type` enum, currently just `"plex"`; `name`,
+`host`, `port`, `ssl`, `token`) and `Library` (one trackable section on a `Connection` — `external_id` is the
+remote section id, e.g. Plex's library key; `title`; `media_type` enum `movie`/`show`/`artist`; `enabled`).
+They're separate entities, not one, because a single server connection can have many library sections you'd
+want to independently enable/disable. `(external_id, connection)` is a unique index on `Library`.
 
 ## Build & run
 
