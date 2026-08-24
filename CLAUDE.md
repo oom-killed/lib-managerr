@@ -26,8 +26,11 @@ much shorter support window), pnpm 11.23.0, Vite 8.2.2, solid-js 1.9.15, TypeScr
 before adopting it. Added later in the same style: `@solidjs/router` 1.0.0, Tailwind CSS 4.3.3
 (`@tailwindcss/vite`), Storybook 10.5.10 with `storybook-solidjs-vite` 10.7.1 (the official `storybook-solidjs`
 package is deprecated in favor of this Vite-based one — checked peer deps against our Storybook/Vite/solid-js
-versions before adopting), `@solid-primitives/i18n` 2.2.1. Don't treat any of these as ceilings — check for
-newer releases before starting new work.
+versions before adopting), `@solid-primitives/i18n` 2.2.1, `modernc.org/sqlite` 1.57.0, `github.com/jackc/pgx/v5`
+5.10.0 (verified against a real containerized PostgreSQL, not just SQLite, before adopting). `entgo.io/ent`
+0.14.6 is the confirmed-latest version to use once the first entity is added — not in go.mod yet since
+nothing imports it (an ent client can't be generated with zero schemas defined). Don't treat any of these as
+ceilings — check for newer releases before starting new work.
 
 ## Repository layout
 
@@ -57,11 +60,27 @@ catalog and check components in isolation.
 
 ## Internationalization
 
-User-facing strings live in `web/src/i18n/<locale>.ts` (nested dictionaries), accessed via `useI18n()`'s `t`
-function (`web/src/i18n/index.tsx`, built on `@solid-primitives/i18n`). Only `en` exists today — add new
-locale files and register them in `dictionaries` in `web/src/i18n/index.tsx` when a second language is
-needed. `packages/ui` stays i18n-agnostic: its components take already-resolved strings as props (`label`,
+User-facing strings live in `web/src/i18n/<locale>.ts` (`en.ts` exports the `Dict` shape and the English
+values; other locales like `fr.ts` implement `Dict` without `as const`, since the literal-narrowed const
+type would force every locale to use `en`'s exact string values), accessed via `useI18n()`'s `t` function
+(`web/src/i18n/index.tsx`, built on `@solid-primitives/i18n`). Register new locale files in `dictionaries`
+in `web/src/i18n/index.tsx`. Selected locale persists to `sessionStorage` (`lib-managerr:locale`).
+`packages/ui` stays i18n-agnostic: its components take already-resolved strings as props (`label`,
 `children`), consistent with the no-business-logic rule above — translation only happens in `web`.
+
+## Database
+
+Supports both SQLite and PostgreSQL, selected by the `DATABASE_URL` env var's scheme (`sqlite://` or
+`postgres://`/`postgresql://`). Unset defaults to `sqlite://data/lib-managerr.db` (data dir auto-created) —
+zero-config for the common self-hosted case. Connection/driver-selection logic lives in `backend/internal/db`
+(`db.Open()`), using `modernc.org/sqlite` (pure Go, no CGO — keeps single-binary cross-compilation simple)
+and `github.com/jackc/pgx/v5`'s `stdlib` shim.
+
+Schema/queries will be handled by [ent](https://entgo.io) once the first entity exists (schema-as-Go-code in
+`backend/ent/schema`, generates a type-safe client that works against either engine without hand-written
+per-dialect SQL) — not wired in yet, since ent has no concept of a client with zero entities. Migrations
+start with ent's built-in schema sync (`client.Schema.Create(ctx)`); a versioned migration tool (e.g. Atlas)
+is a later addition if schema changes in production ever need more control than "sync to current shape."
 
 ## Build & run
 

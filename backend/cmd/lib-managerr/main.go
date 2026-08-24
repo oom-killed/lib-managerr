@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"io/fs"
 	"log"
 	"net/http"
 	"strings"
 
+	"github.com/oom-killed/lib-managerr/internal/db"
 	"github.com/oom-killed/lib-managerr/internal/webui"
 )
 
@@ -31,6 +33,16 @@ func spaHandler(fsys fs.FS) http.Handler {
 }
 
 func main() {
+	sqlDB, err := db.Open()
+	if err != nil {
+		log.Fatalf("open database: %v", err)
+	}
+	defer sqlDB.Close()
+
+	if err := sqlDB.PingContext(context.Background()); err != nil {
+		log.Fatalf("connect to database: %v", err)
+	}
+
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /api/health", func(w http.ResponseWriter, r *http.Request) {

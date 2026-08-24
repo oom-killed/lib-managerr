@@ -2,6 +2,7 @@
 /bin/
 backend/internal/webui/dist/*
 !backend/internal/webui/dist/.gitkeep
+data/
 
 # Node
 node_modules/
