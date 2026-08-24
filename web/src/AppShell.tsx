@@ -9,7 +9,7 @@ export function AppShell(props: { children?: JSX.Element }) {
 	const isActive = (href: string) => location.pathname === href;
 
 	return (
-		<div class="flex min-h-screen flex-col">
+		<div class="flex min-h-screen flex-col bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-50">
 			<Navbar>lib-managerr</Navbar>
 			<div class="flex flex-1">
 				<Sidebar>

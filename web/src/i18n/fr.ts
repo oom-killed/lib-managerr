@@ -1,6 +1,11 @@
 import type { Dict } from "./en.ts";
 
 export const dict: Dict = {
+	common: {
+		save: "Enregistrer",
+		cancel: "Annuler",
+		close: "Fermer",
+	},
 	nav: {
 		dashboard: "Tableau de bord",
 		libraries: "Bibliothèques",
@@ -25,6 +30,17 @@ export const dict: Dict = {
 		},
 		libraries: {
 			title: "Bibliothèques",
+			addButton: "Ajouter une bibliothèque",
+			empty: "Aucune bibliothèque connectée pour le moment.",
+			modalTitleAdd: "Ajouter une bibliothèque",
+			modalTitleView: "Bibliothèque",
+			fields: {
+				name: "Nom",
+				host: "Hôte",
+				port: "Port",
+				ssl: "Utiliser SSL",
+				token: "Jeton",
+			},
 		},
 	},
 };

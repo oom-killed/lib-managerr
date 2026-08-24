@@ -57,6 +57,16 @@ calls, or app-specific state stays in `web` as a binding layer on top.
 Every component in `packages/ui` gets a co-located `*.stories.tsx` file. Run `make storybook` to browse the
 catalog and check components in isolation.
 
+**Dark mode has no guaranteed dark backdrop unless something paints one.** `color-scheme: light dark` alone
+doesn't reliably give a dark page background across browsers — `AppShell`'s root div explicitly sets
+`bg-white dark:bg-neutral-950` (plus matching `text-neutral-900 dark:text-neutral-50`) for exactly this
+reason. A component using `dark:text-neutral-50`-style light text without a guaranteed dark background behind
+it will render unreadable light-on-white outside of states (like `:hover`) that happen to set their own dark
+background — this has bitten a couple of components already (`NavLink`, a plain `<button>` in
+`settings/Libraries.tsx`). Also: plain `<button>` elements need `appearance-none`, since Tailwind v4's
+preflight explicitly restores native `appearance: button`, letting OS button chrome interfere with custom
+background/hover styling.
+
 ## Internationalization
 
 User-facing strings live in `web/src/i18n/<locale>.ts` (`en.ts` exports the `Dict` shape and the English
@@ -90,6 +100,23 @@ First entities: `Connection` (credentials to reach one server — `type` enum, c
 remote section id, e.g. Plex's library key; `title`; `media_type` enum `movie`/`show`/`artist`; `enabled`).
 They're separate entities, not one, because a single server connection can have many library sections you'd
 want to independently enable/disable. `(external_id, connection)` is a unique index on `Library`.
+
+## HTTP API
+
+Domain-data endpoints (as opposed to `main.go`'s health/static-file concerns) live in `backend/internal/api`,
+registered onto the stdlib `ServeMux` from `main.go` (e.g. `api.RegisterConnectionRoutes(mux, client)`).
+Handlers use the generated ent types directly as request/response bodies rather than separate DTOs — e.g.
+`Connection`'s `Token` field is already tagged `json:"-"` from the schema's `.Sensitive()` field option, so
+it's excluded from API responses for free.
+
+**Adding a new connection type without heavy refactoring**: the `Connection` entity's fields (`type`, `name`,
+`host`, `port`, `ssl`, `token`) are deliberately generic across host-based server integrations, not
+Plex-specific — a new type is a new `ent/schema/connection.go` enum value plus, on the frontend, a new
+`ConnectionType` union member and a `CONNECTION_TYPE_FIELDS`/`CONNECTION_TYPE_OPTIONS` registry entry
+(`web/src/routes/settings/libraries/connectionTypes.ts`). `ConnectionForm.tsx` renders fields by iterating
+that registry rather than hardcoding JSX per field, so the modal/list/page code doesn't change when a type
+is added — only the registry does. The type-selector dropdown only renders once there's more than one
+option, to avoid a pointless single-item `<select>` today.
 
 ## Build & run
 

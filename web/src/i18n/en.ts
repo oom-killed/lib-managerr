@@ -1,4 +1,9 @@
 export type Dict = {
+	common: {
+		save: string;
+		cancel: string;
+		close: string;
+	};
 	nav: {
 		dashboard: string;
 		libraries: string;
@@ -23,11 +28,27 @@ export type Dict = {
 		};
 		libraries: {
 			title: string;
+			addButton: string;
+			empty: string;
+			modalTitleAdd: string;
+			modalTitleView: string;
+			fields: {
+				name: string;
+				host: string;
+				port: string;
+				ssl: string;
+				token: string;
+			};
 		};
 	};
 };
 
 export const dict: Dict = {
+	common: {
+		save: "Save",
+		cancel: "Cancel",
+		close: "Close",
+	},
 	nav: {
 		dashboard: "Dashboard",
 		libraries: "Libraries",
@@ -52,6 +73,17 @@ export const dict: Dict = {
 		},
 		libraries: {
 			title: "Libraries",
+			addButton: "Add Library",
+			empty: "No libraries connected yet.",
+			modalTitleAdd: "Add Library",
+			modalTitleView: "Library",
+			fields: {
+				name: "Name",
+				host: "Host",
+				port: "Port",
+				ssl: "Use SSL",
+				token: "Token",
+			},
 		},
 	},
 };
