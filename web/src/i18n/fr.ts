@@ -6,6 +6,10 @@ export const dict: Dict = {
 		libraries: "Bibliothèques",
 		settings: "Paramètres",
 	},
+	settingsNav: {
+		general: "Général",
+		libraries: "Bibliothèques",
+	},
 	dashboard: {
 		title: "Tableau de bord",
 		backendStatus: "état du serveur : {{status}}",
@@ -15,7 +19,12 @@ export const dict: Dict = {
 		title: "Bibliothèques",
 	},
 	settings: {
-		title: "Paramètres",
-		locale: "Langue",
+		general: {
+			title: "Général",
+			locale: "Langue",
+		},
+		libraries: {
+			title: "Bibliothèques",
+		},
 	},
 };

@@ -4,6 +4,10 @@ export type Dict = {
 		libraries: string;
 		settings: string;
 	};
+	settingsNav: {
+		general: string;
+		libraries: string;
+	};
 	dashboard: {
 		title: string;
 		backendStatus: string;
@@ -13,8 +17,13 @@ export type Dict = {
 		title: string;
 	};
 	settings: {
-		title: string;
-		locale: string;
+		general: {
+			title: string;
+			locale: string;
+		};
+		libraries: {
+			title: string;
+		};
 	};
 };
 
@@ -23,6 +32,10 @@ export const dict: Dict = {
 		dashboard: "Dashboard",
 		libraries: "Libraries",
 		settings: "Settings",
+	},
+	settingsNav: {
+		general: "General",
+		libraries: "Libraries",
 	},
 	dashboard: {
 		title: "Dashboard",
@@ -33,7 +46,12 @@ export const dict: Dict = {
 		title: "Libraries",
 	},
 	settings: {
-		title: "Settings",
-		locale: "Language",
+		general: {
+			title: "General",
+			locale: "Language",
+		},
+		libraries: {
+			title: "Libraries",
+		},
 	},
 };
