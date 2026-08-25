@@ -22,6 +22,12 @@ export const dict: Dict = {
 	},
 	libraries: {
 		title: "Bibliothèques",
+		connectionLabel: "Connexion",
+		libraryLabel: "Bibliothèque",
+		noConnections:
+			"Aucune connexion configurée pour le moment. Ajoutez-en une dans Paramètres › Bibliothèques.",
+		loadError: "Échec du chargement des bibliothèques de ce serveur.",
+		noLibraries: "Aucune bibliothèque trouvée sur ce serveur.",
 	},
 	settings: {
 		general: {

@@ -1,12 +1,12 @@
 import { Button, Modal } from "@lib-managerr/ui";
 import { createResource, createSignal, For, Show } from "solid-js";
-import { useI18n } from "../../i18n/index.tsx";
 import {
 	type Connection,
 	createConnection,
 	fetchConnections,
 	updateConnection,
-} from "./libraries/api.ts";
+} from "../../api/connections.ts";
+import { useI18n } from "../../i18n/index.tsx";
 import { ConnectionForm } from "./libraries/ConnectionForm.tsx";
 
 type ModalState =

@@ -1,9 +1,11 @@
 // The extensibility seam for adding more connection types later: a new
-// type means a new ConnectionType union member, a CONNECTION_TYPE_OPTIONS
-// entry, and a CONNECTION_TYPE_FIELDS entry — the form/modal/list code
-// itself doesn't change.
+// type means a new ConnectionType union member (in ../../../api/connections.ts,
+// the canonical source), a CONNECTION_TYPE_OPTIONS entry, and a
+// CONNECTION_TYPE_FIELDS entry — the form/modal/list code itself doesn't change.
 
-export type ConnectionType = "plex";
+import type { ConnectionType } from "../../../api/connections.ts";
+
+export type { ConnectionType };
 
 export type ConnectionFieldKey = "name" | "host" | "port" | "ssl" | "token";
 

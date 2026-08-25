@@ -1,12 +1,15 @@
 import { Button, Checkbox, Select, TextField } from "@lib-managerr/ui";
 import { createSignal, For, Show } from "solid-js";
-import { useI18n } from "../../../i18n/index.tsx";
 import type {
 	Connection,
 	ConnectionInput,
 	TestConnectionResult,
-} from "./api.ts";
-import { testConnection, testExistingConnection } from "./api.ts";
+} from "../../../api/connections.ts";
+import {
+	testConnection,
+	testExistingConnection,
+} from "../../../api/connections.ts";
+import { useI18n } from "../../../i18n/index.tsx";
 import {
 	CONNECTION_TYPE_FIELDS,
 	CONNECTION_TYPE_OPTIONS,

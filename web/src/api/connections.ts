@@ -1,4 +1,8 @@
-import type { ConnectionType } from "./connectionTypes.ts";
+// Shared across routes: settings/libraries owns Connection CRUD, the root
+// Libraries page uses fetchConnections + fetchConnectionLibraries to build
+// its connection/library selector.
+
+export type ConnectionType = "plex";
 
 export type Connection = {
 	id: number;
@@ -94,6 +98,22 @@ export async function testExistingConnection(
 	});
 	if (!res.ok) {
 		throw new Error("failed to test connection");
+	}
+	return res.json();
+}
+
+export type LibrarySection = {
+	key: string;
+	title: string;
+	type: string;
+};
+
+export async function fetchConnectionLibraries(
+	connectionId: number,
+): Promise<LibrarySection[]> {
+	const res = await fetch(`/api/connections/${connectionId}/libraries`);
+	if (!res.ok) {
+		throw new Error("failed to load libraries");
 	}
 	return res.json();
 }

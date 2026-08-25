@@ -20,6 +20,11 @@ export type Dict = {
 	};
 	libraries: {
 		title: string;
+		connectionLabel: string;
+		libraryLabel: string;
+		noConnections: string;
+		loadError: string;
+		noLibraries: string;
 	};
 	settings: {
 		general: {
@@ -70,6 +75,12 @@ export const dict: Dict = {
 	},
 	libraries: {
 		title: "Libraries",
+		connectionLabel: "Connection",
+		libraryLabel: "Library",
+		noConnections:
+			"No connections configured yet. Add one in Settings › Libraries.",
+		loadError: "Failed to load libraries from this server.",
+		noLibraries: "No libraries found on this server.",
 	},
 	settings: {
 		general: {

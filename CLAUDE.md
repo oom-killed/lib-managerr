@@ -57,6 +57,11 @@ calls, or app-specific state stays in `web` as a binding layer on top.
 Every component in `packages/ui` gets a co-located `*.stories.tsx` file. Run `make storybook` to browse the
 catalog and check components in isolation.
 
+`web/src/api/` holds data-fetching functions shared across more than one route (e.g. `connections.ts` — both
+`routes/settings/Libraries.tsx` (CRUD) and `routes/Libraries.tsx` (the connection/library selector) use it).
+Route-specific API calls stay co-located with the route instead (e.g. nothing in `routes/settings/libraries/`
+besides the Connection form's own concerns).
+
 **Dark mode has no guaranteed dark backdrop unless something paints one.** `color-scheme: light dark` alone
 doesn't reliably give a dark page background across browsers — `AppShell`'s root div explicitly sets
 `bg-white dark:bg-neutral-950` (plus matching `text-neutral-900 dark:text-neutral-50`) for exactly this
@@ -121,6 +126,13 @@ A failed test is a normal outcome, not an HTTP error: both endpoints always retu
 "error"?: string}` unless the request itself is malformed (400) or the id doesn't exist (404). A new
 connection type's test support is a new `case` in `testConnectionType` (`backend/internal/api/connections.go`)
 plus a new client package — the same extensibility shape as the frontend's field registry below.
+
+`GET /api/connections/{id}/libraries` fetches a connection's actual library sections live from the server
+(no persistence — the `Library` ent entity exists in the schema but nothing populates it yet; that's a
+separate future increment), dispatching by `type` via `listLibrariesForConnection`, same shape as
+`testConnectionType`. `backend/internal/plex.ListLibraries` calls `/library/sections`. A failure to reach the
+upstream server returns `502`, distinct from `404` (connection id not found) — the root `web/src/routes/
+Libraries.tsx` page's connection/library selector relies on that distinction to show the right empty state.
 
 **Adding a new connection type without heavy refactoring**: the `Connection` entity's fields (`type`, `name`,
 `host`, `port`, `ssl`, `token`) are deliberately generic across host-based server integrations, not

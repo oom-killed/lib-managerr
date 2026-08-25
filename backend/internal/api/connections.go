@@ -53,6 +53,17 @@ func testConnectionType(ctx context.Context, in testConnectionInput) testConnect
 	}
 }
 
+// listLibrariesForConnection dispatches to the client for conn.Type. Same
+// extensibility seam as testConnectionType.
+func listLibrariesForConnection(ctx context.Context, conn *ent.Connection) ([]plex.Library, error) {
+	switch conn.Type {
+	case connection.TypePlex:
+		return plex.ListLibraries(ctx, plex.Config{Host: conn.Host, Port: conn.Port, SSL: conn.Ssl, Token: conn.Token})
+	default:
+		return nil, fmt.Errorf("unsupported connection type %q", conn.Type)
+	}
+}
+
 // RegisterConnectionRoutes wires the Connection endpoints onto mux.
 func RegisterConnectionRoutes(mux *http.ServeMux, client *ent.Client) {
 	mux.HandleFunc("GET /api/connections", func(w http.ResponseWriter, r *http.Request) {
@@ -198,6 +209,37 @@ func RegisterConnectionRoutes(mux *http.ServeMux, client *ent.Client) {
 		result := testConnectionType(r.Context(), in)
 		logger.Debug("connection test", "connection_type", in.Type, "ok", result.OK, "error", result.Error)
 		writeJSON(w, http.StatusOK, result)
+	})
+
+	mux.HandleFunc("GET /api/connections/{id}/libraries", func(w http.ResponseWriter, r *http.Request) {
+		id, err := strconv.Atoi(r.PathValue("id"))
+		if err != nil {
+			http.Error(w, "invalid connection id", http.StatusBadRequest)
+			return
+		}
+
+		logger := logging.FromContext(r.Context()).With("connection_id", id)
+
+		conn, err := client.Connection.Get(r.Context(), id)
+		if err != nil {
+			if ent.IsNotFound(err) {
+				logger.Warn("list libraries: connection not found")
+				http.Error(w, "connection not found", http.StatusNotFound)
+				return
+			}
+			logger.Error("list libraries failed", "error", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		libraries, err := listLibrariesForConnection(r.Context(), conn)
+		if err != nil {
+			logger.Warn("list libraries: upstream error", "error", err)
+			http.Error(w, err.Error(), http.StatusBadGateway)
+			return
+		}
+
+		writeJSON(w, http.StatusOK, libraries)
 	})
 }
 
