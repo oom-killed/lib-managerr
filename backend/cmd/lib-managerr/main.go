@@ -3,13 +3,15 @@ package main
 import (
 	"context"
 	"io/fs"
-	"log"
+	"log/slog"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/oom-killed/lib-managerr/internal/api"
 	"github.com/oom-killed/lib-managerr/internal/db"
 	"github.com/oom-killed/lib-managerr/internal/entdb"
+	"github.com/oom-killed/lib-managerr/internal/logging"
 	"github.com/oom-killed/lib-managerr/internal/webui"
 )
 
@@ -35,19 +37,25 @@ func spaHandler(fsys fs.FS) http.Handler {
 }
 
 func main() {
+	logger := logging.New()
+	slog.SetDefault(logger)
+
 	sqlDB, engine, err := db.Open()
 	if err != nil {
-		log.Fatalf("open database: %v", err)
+		logger.Error("open database", "error", err)
+		os.Exit(1)
 	}
 
 	client, err := entdb.New(sqlDB, engine)
 	if err != nil {
-		log.Fatalf("build database client: %v", err)
+		logger.Error("build database client", "error", err)
+		os.Exit(1)
 	}
 	defer client.Close()
 
 	if err := client.Schema.Create(context.Background()); err != nil {
-		log.Fatalf("run schema migration: %v", err)
+		logger.Error("run schema migration", "error", err)
+		os.Exit(1)
 	}
 
 	mux := http.NewServeMux()
@@ -62,8 +70,9 @@ func main() {
 	mux.Handle("/", spaHandler(webui.FS()))
 
 	const addr = ":8080"
-	log.Printf("lib-managerr listening on %s", addr)
-	if err := http.ListenAndServe(addr, mux); err != nil {
-		log.Fatal(err)
+	logger.Info("lib-managerr listening", "addr", addr)
+	if err := http.ListenAndServe(addr, logging.Middleware(mux)); err != nil {
+		logger.Error("server stopped", "error", err)
+		os.Exit(1)
 	}
 }

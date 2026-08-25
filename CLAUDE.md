@@ -131,6 +131,20 @@ that registry rather than hardcoding JSX per field, so the modal/list/page code 
 is added — only the registry does. The type-selector dropdown only renders once there's more than one
 option, to avoid a pointless single-item `<select>` today.
 
+## Logging
+
+Built on the stdlib `log/slog` — no logging dependency. `backend/internal/logging.New()` builds the logger
+from two env vars: `LOG_LEVEL` (`debug`/`info`/`warn`/`error`, default `info`, case-insensitive, unrecognized
+values fall back to `info`) and `LOG_FORMAT` (`text` default for local dev, `json` for structured/aggregated
+output). `main.go` sets it as `slog.Default()`.
+
+`logging.Middleware` wraps the whole `mux` in `main.go`: every request gets a generated `request_id` plus
+`method`/`path` attached to a logger, which is stashed in the request's `context.Context` and also used to
+log `status`/`duration_ms` when the request completes. Handlers pull that request-scoped logger via
+`logging.FromContext(r.Context())` and can chain `.With(...)` to add their own queryable fields on top (e.g.
+`connection_id`) — see `backend/internal/api/connections.go` for the pattern. Falls back to `slog.Default()`
+if called outside a request (e.g. from `main.go` directly), so it's always safe to call.
+
 ## Build & run
 
 **Development** (two processes, hot reload on both sides):

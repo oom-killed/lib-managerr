@@ -12,6 +12,7 @@ import (
 
 	"github.com/oom-killed/lib-managerr/ent"
 	"github.com/oom-killed/lib-managerr/ent/connection"
+	"github.com/oom-killed/lib-managerr/internal/logging"
 	"github.com/oom-killed/lib-managerr/internal/plex"
 )
 
@@ -57,6 +58,7 @@ func RegisterConnectionRoutes(mux *http.ServeMux, client *ent.Client) {
 	mux.HandleFunc("GET /api/connections", func(w http.ResponseWriter, r *http.Request) {
 		conns, err := client.Connection.Query().All(r.Context())
 		if err != nil {
+			logging.FromContext(r.Context()).Error("list connections", "error", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -79,9 +81,12 @@ func RegisterConnectionRoutes(mux *http.ServeMux, client *ent.Client) {
 			SetToken(in.Token).
 			Save(r.Context())
 		if err != nil {
+			logging.FromContext(r.Context()).Warn("create connection failed", "error", err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+		logging.FromContext(r.Context()).Info("connection created",
+			"connection_id", conn.ID, "connection_type", conn.Type)
 		writeJSON(w, http.StatusCreated, conn)
 	})
 
@@ -112,18 +117,23 @@ func RegisterConnectionRoutes(mux *http.ServeMux, client *ent.Client) {
 
 		conn, err := update.Save(r.Context())
 		if err != nil {
+			logger := logging.FromContext(r.Context()).With("connection_id", id)
 			if ent.IsNotFound(err) {
+				logger.Warn("update connection: not found")
 				http.Error(w, "connection not found", http.StatusNotFound)
 				return
 			}
 			var validationErr *ent.ValidationError
 			if errors.As(err, &validationErr) {
+				logger.Warn("update connection failed", "error", err)
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
+			logger.Error("update connection failed", "error", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		logging.FromContext(r.Context()).Info("connection updated", "connection_id", conn.ID)
 		writeJSON(w, http.StatusOK, conn)
 	})
 
@@ -135,7 +145,10 @@ func RegisterConnectionRoutes(mux *http.ServeMux, client *ent.Client) {
 			http.Error(w, "invalid request body", http.StatusBadRequest)
 			return
 		}
-		writeJSON(w, http.StatusOK, testConnectionType(r.Context(), in))
+		result := testConnectionType(r.Context(), in)
+		logging.FromContext(r.Context()).Debug("connection test",
+			"connection_type", in.Type, "ok", result.OK, "error", result.Error)
+		writeJSON(w, http.StatusOK, result)
 	})
 
 	// For an existing connection: an empty token in the request falls back
@@ -153,13 +166,17 @@ func RegisterConnectionRoutes(mux *http.ServeMux, client *ent.Client) {
 			return
 		}
 
+		logger := logging.FromContext(r.Context()).With("connection_id", id)
+
 		if in.Token == "" {
 			existing, err := client.Connection.Get(r.Context(), id)
 			if err != nil {
 				if ent.IsNotFound(err) {
+					logger.Warn("test connection: not found")
 					http.Error(w, "connection not found", http.StatusNotFound)
 					return
 				}
+				logger.Error("test connection failed", "error", err)
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
@@ -168,6 +185,7 @@ func RegisterConnectionRoutes(mux *http.ServeMux, client *ent.Client) {
 			// host/port/ssl would make the server send the real credential
 			// to an arbitrary caller-supplied destination.
 			if in.Host != existing.Host || in.Port != existing.Port || in.SSL != existing.Ssl {
+				logger.Warn("test connection: blank token with mismatched host/port/ssl rejected")
 				writeJSON(w, http.StatusOK, testConnectionResult{
 					OK:    false,
 					Error: "token is required when testing a different host, port, or SSL setting than what's saved",
@@ -177,7 +195,9 @@ func RegisterConnectionRoutes(mux *http.ServeMux, client *ent.Client) {
 			in.Token = existing.Token
 		}
 
-		writeJSON(w, http.StatusOK, testConnectionType(r.Context(), in))
+		result := testConnectionType(r.Context(), in)
+		logger.Debug("connection test", "connection_type", in.Type, "ok", result.OK, "error", result.Error)
+		writeJSON(w, http.StatusOK, result)
 	})
 }
 
