@@ -1,34 +1,28 @@
 import { Select } from "@lib-managerr/ui";
-import { createEffect, createResource, createSignal, Show } from "solid-js";
+import { createEffect, createResource, Show } from "solid-js";
 import {
 	type Connection,
 	fetchConnectionLibraries,
 	fetchConnections,
 } from "../api/connections.ts";
 import { useI18n } from "../i18n/index.tsx";
+import { useLibrarySelection } from "../state/librarySelection.tsx";
 
 function Libraries() {
 	const { t } = useI18n();
+	const { connectionId, setConnectionId, libraryKey, setLibraryKey } =
+		useLibrarySelection();
 	const [connections] = createResource(fetchConnections);
-	const [selectedConnectionId, setSelectedConnectionId] = createSignal<
-		number | undefined
-	>(undefined);
-	const [selectedLibraryKey, setSelectedLibraryKey] = createSignal<
-		string | undefined
-	>(undefined);
 
 	// Default to the first connection once the list loads.
 	createEffect(() => {
 		const list = connections();
-		if (list && list.length > 0 && selectedConnectionId() === undefined) {
-			setSelectedConnectionId(list[0].id);
+		if (list && list.length > 0 && connectionId() === undefined) {
+			setConnectionId(list[0].id);
 		}
 	});
 
-	const [libraries] = createResource(
-		selectedConnectionId,
-		fetchConnectionLibraries,
-	);
+	const [libraries] = createResource(connectionId, fetchConnectionLibraries);
 
 	const connectionOptions = () =>
 		(connections() ?? []).map((connection: Connection) => ({
@@ -58,11 +52,8 @@ function Libraries() {
 						<Select
 							id="connection-select"
 							options={connectionOptions()}
-							value={String(selectedConnectionId() ?? "")}
-							onChange={(value) => {
-								setSelectedConnectionId(Number(value));
-								setSelectedLibraryKey(undefined);
-							}}
+							value={String(connectionId() ?? "")}
+							onChange={(value) => setConnectionId(Number(value))}
 						/>
 					</div>
 
@@ -88,8 +79,8 @@ function Libraries() {
 							<Select
 								id="library-select"
 								options={libraryOptions()}
-								value={selectedLibraryKey() ?? libraryOptions()[0]?.value ?? ""}
-								onChange={setSelectedLibraryKey}
+								value={libraryKey() ?? libraryOptions()[0]?.value ?? ""}
+								onChange={setLibraryKey}
 							/>
 						</div>
 					</Show>

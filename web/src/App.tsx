@@ -5,20 +5,23 @@ import Dashboard from "./routes/Dashboard.tsx";
 import Libraries from "./routes/Libraries.tsx";
 import General from "./routes/settings/General.tsx";
 import SettingsLibraries from "./routes/settings/Libraries.tsx";
+import { LibrarySelectionProvider } from "./state/librarySelection.tsx";
 
 function App() {
 	return (
 		<I18nProvider>
-			<Router root={AppShell}>
-				<Route path="/" component={Dashboard} />
-				<Route path="/libraries" component={Libraries} />
-				<Route
-					path="/settings"
-					component={() => <Navigate href="/settings/general" />}
-				/>
-				<Route path="/settings/general" component={General} />
-				<Route path="/settings/libraries" component={SettingsLibraries} />
-			</Router>
+			<LibrarySelectionProvider>
+				<Router root={AppShell}>
+					<Route path="/" component={Dashboard} />
+					<Route path="/libraries" component={Libraries} />
+					<Route
+						path="/settings"
+						component={() => <Navigate href="/settings/general" />}
+					/>
+					<Route path="/settings/general" component={General} />
+					<Route path="/settings/libraries" component={SettingsLibraries} />
+				</Router>
+			</LibrarySelectionProvider>
 		</I18nProvider>
 	);
 }

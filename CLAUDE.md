@@ -82,6 +82,17 @@ in `web/src/i18n/index.tsx`. Selected locale persists to `sessionStorage` (`lib-
 `packages/ui` stays i18n-agnostic: its components take already-resolved strings as props (`label`,
 `children`), consistent with the no-business-logic rule above — translation only happens in `web`.
 
+## Shared state
+
+Cross-component state (not scoped to one route) lives in `web/src/state/` as a signal + context provider,
+mounted once in `App.tsx` — the same pattern `I18nProvider` already established, extended in
+`state/librarySelection.tsx` for the current connection/library selection. **Not** Zustand or another
+React-oriented state library: Solid's own signals/context are the idiomatic equivalent (fine-grained
+reactivity is Solid's actual model, not a bolt-on), and a React state library's hooks API doesn't work in
+Solid at all — only its framework-agnostic vanilla store would, which would mean hand-wiring subscriptions
+into Solid's reactivity rather than using it. Route-local state (e.g. a form's own field values) stays a
+plain `createSignal` inside the component — promote to `state/` only when more than one route needs it.
+
 ## Database
 
 Supports both SQLite and PostgreSQL, selected by the `DATABASE_URL` env var's scheme (`sqlite://` or
