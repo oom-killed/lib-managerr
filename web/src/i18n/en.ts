@@ -33,6 +33,10 @@ export type Dict = {
 			modalTitleAdd: string;
 			modalTitleEdit: string;
 			tokenEditHint: string;
+			testButton: string;
+			testing: string;
+			testSuccess: string;
+			testFailure: string;
 			fields: {
 				name: string;
 				host: string;
@@ -79,6 +83,10 @@ export const dict: Dict = {
 			modalTitleAdd: "Add Library",
 			modalTitleEdit: "Edit Library",
 			tokenEditHint: "Leave blank to keep the current token",
+			testButton: "Test Connection",
+			testing: "Testing...",
+			testSuccess: "Connection successful",
+			testFailure: "Connection failed: {{error}}",
 			fields: {
 				name: "Name",
 				host: "Host",

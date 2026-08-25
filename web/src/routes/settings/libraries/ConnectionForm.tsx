@@ -1,7 +1,12 @@
 import { Button, Checkbox, Select, TextField } from "@lib-managerr/ui";
 import { createSignal, For, Show } from "solid-js";
 import { useI18n } from "../../../i18n/index.tsx";
-import type { Connection, ConnectionInput } from "./api.ts";
+import type {
+	Connection,
+	ConnectionInput,
+	TestConnectionResult,
+} from "./api.ts";
+import { testConnection, testExistingConnection } from "./api.ts";
 import {
 	CONNECTION_TYPE_FIELDS,
 	CONNECTION_TYPE_OPTIONS,
@@ -57,11 +62,23 @@ export function ConnectionForm(props: ConnectionFormProps) {
 	const initialState = toFormState(props.connection);
 	const [state, setState] = createSignal(initialState);
 	const [submitting, setSubmitting] = createSignal(false);
+	const [testing, setTesting] = createSignal(false);
+	const [testResult, setTestResult] = createSignal<TestConnectionResult | null>(
+		null,
+	);
 
 	const isAdd = () => props.mode === "add";
 	const isDirty = () =>
 		isAdd() || JSON.stringify(state()) !== JSON.stringify(initialState);
 	const canSave = () => isDirty() && !submitting();
+	// host + port + (token, but only when adding — an existing connection
+	// can fall back to its stored token) are the minimum needed to attempt
+	// a connection, regardless of connection type.
+	const canTest = () =>
+		state().host.trim() !== "" &&
+		Number(state().port) > 0 &&
+		(isAdd() ? state().token.trim() !== "" : true) &&
+		!testing();
 
 	const handleSubmit = async (e: SubmitEvent) => {
 		e.preventDefault();
@@ -80,6 +97,29 @@ export function ConnectionForm(props: ConnectionFormProps) {
 			});
 		} finally {
 			setSubmitting(false);
+		}
+	};
+
+	const handleTest = async () => {
+		setTesting(true);
+		setTestResult(null);
+		try {
+			const input = {
+				type: state().type,
+				host: state().host,
+				port: Number(state().port),
+				ssl: state().ssl,
+				token: state().token,
+			};
+			const result =
+				!isAdd() && props.connection
+					? await testExistingConnection(props.connection.id, input)
+					: await testConnection(input);
+			setTestResult(result);
+		} catch {
+			setTestResult({ ok: false, error: "network error" });
+		} finally {
+			setTesting(false);
 		}
 	};
 
@@ -111,7 +151,10 @@ export function ConnectionForm(props: ConnectionFormProps) {
 										? t("settings.libraries.tokenEditHint")
 										: undefined
 								}
-								onChange={(value) => setFieldValue(setState, field.key, value)}
+								onChange={(value) => {
+									setFieldValue(setState, field.key, value);
+									setTestResult(null);
+								}}
 							/>
 						}
 					>
@@ -119,13 +162,45 @@ export function ConnectionForm(props: ConnectionFormProps) {
 							id={field.key}
 							label={t(field.labelKey)}
 							checked={Boolean(getFieldValue(state(), field.key))}
-							onChange={(checked) =>
-								setFieldValue(setState, field.key, checked)
-							}
+							onChange={(checked) => {
+								setFieldValue(setState, field.key, checked);
+								setTestResult(null);
+							}}
 						/>
 					</Show>
 				)}
 			</For>
+
+			<div class="flex items-center gap-2">
+				<Button
+					type="button"
+					variant="secondary"
+					disabled={!canTest()}
+					onClick={handleTest}
+				>
+					{testing()
+						? t("settings.libraries.testing")
+						: t("settings.libraries.testButton")}
+				</Button>
+				<Show when={testResult()}>
+					{(result) => (
+						<span
+							class="text-sm"
+							classList={{
+								"text-green-600 dark:text-green-400": result().ok,
+								"text-red-600 dark:text-red-400": !result().ok,
+							}}
+						>
+							{result().ok
+								? t("settings.libraries.testSuccess")
+								: t("settings.libraries.testFailure", {
+										error: result().error ?? "",
+									})}
+						</span>
+					)}
+				</Show>
+			</div>
+
 			<div class="mt-2 flex justify-end gap-2">
 				<Button type="button" variant="secondary" onClick={props.onCancel}>
 					{t("common.cancel")}

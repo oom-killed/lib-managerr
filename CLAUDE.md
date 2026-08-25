@@ -113,6 +113,15 @@ it's excluded from API responses for free.
 empty `token` in the request body as "leave the existing token unchanged" rather than clearing it — there's
 no other way for a client to express "no change" versus "clear it" without the current value to diff against.
 
+`POST /api/connections/test` (add mode — full fields including token) and `POST /api/connections/{id}/test`
+(edit mode — same fields, but an empty `token` falls back to the connection's stored one, same contract as
+`PUT`) verify a connection actually works, dispatching by `type` to a client package
+(`backend/internal/plex` today — `Ping` hits Plex's `/identity`, not `/`, to avoid reverse-proxy redirects).
+A failed test is a normal outcome, not an HTTP error: both endpoints always return `200 {"ok": bool,
+"error"?: string}` unless the request itself is malformed (400) or the id doesn't exist (404). A new
+connection type's test support is a new `case` in `testConnectionType` (`backend/internal/api/connections.go`)
+plus a new client package — the same extensibility shape as the frontend's field registry below.
+
 **Adding a new connection type without heavy refactoring**: the `Connection` entity's fields (`type`, `name`,
 `host`, `port`, `ssl`, `token`) are deliberately generic across host-based server integrations, not
 Plex-specific — a new type is a new `ent/schema/connection.go` enum value plus, on the frontend, a new

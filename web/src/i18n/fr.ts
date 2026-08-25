@@ -35,6 +35,10 @@ export const dict: Dict = {
 			modalTitleAdd: "Ajouter une bibliothèque",
 			modalTitleEdit: "Modifier la bibliothèque",
 			tokenEditHint: "Laisser vide pour conserver le jeton actuel",
+			testButton: "Tester la connexion",
+			testing: "Test en cours...",
+			testSuccess: "Connexion réussie",
+			testFailure: "Échec de la connexion : {{error}}",
 			fields: {
 				name: "Nom",
 				host: "Hôte",

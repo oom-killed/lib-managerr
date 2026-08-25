@@ -3,13 +3,16 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/oom-killed/lib-managerr/ent"
 	"github.com/oom-killed/lib-managerr/ent/connection"
+	"github.com/oom-killed/lib-managerr/internal/plex"
 )
 
 type connectionInput struct {
@@ -19,6 +22,34 @@ type connectionInput struct {
 	Port  int             `json:"port"`
 	SSL   bool            `json:"ssl"`
 	Token string          `json:"token"`
+}
+
+type testConnectionInput struct {
+	Type  connection.Type `json:"type"`
+	Host  string          `json:"host"`
+	Port  int             `json:"port"`
+	SSL   bool            `json:"ssl"`
+	Token string          `json:"token"`
+}
+
+type testConnectionResult struct {
+	OK    bool   `json:"ok"`
+	Error string `json:"error,omitempty"`
+}
+
+// testConnectionType dispatches to the client for in.Type. This is the
+// extensibility seam for future connection types: a new type is a new case
+// here plus a new client package, not a restructuring of the handlers.
+func testConnectionType(ctx context.Context, in testConnectionInput) testConnectionResult {
+	switch in.Type {
+	case connection.TypePlex:
+		if err := plex.Ping(ctx, plex.Config{Host: in.Host, Port: in.Port, SSL: in.SSL, Token: in.Token}); err != nil {
+			return testConnectionResult{OK: false, Error: err.Error()}
+		}
+		return testConnectionResult{OK: true}
+	default:
+		return testConnectionResult{OK: false, Error: fmt.Sprintf("unsupported connection type %q", in.Type)}
+	}
 }
 
 // RegisterConnectionRoutes wires the Connection endpoints onto mux.
@@ -94,6 +125,59 @@ func RegisterConnectionRoutes(mux *http.ServeMux, client *ent.Client) {
 			return
 		}
 		writeJSON(w, http.StatusOK, conn)
+	})
+
+	// For a not-yet-saved connection: the token can only come from the
+	// request, since there's nothing persisted to fall back to.
+	mux.HandleFunc("POST /api/connections/test", func(w http.ResponseWriter, r *http.Request) {
+		var in testConnectionInput
+		if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+			http.Error(w, "invalid request body", http.StatusBadRequest)
+			return
+		}
+		writeJSON(w, http.StatusOK, testConnectionType(r.Context(), in))
+	})
+
+	// For an existing connection: an empty token in the request falls back
+	// to the stored token, matching PUT's "blank means unchanged" contract.
+	mux.HandleFunc("POST /api/connections/{id}/test", func(w http.ResponseWriter, r *http.Request) {
+		id, err := strconv.Atoi(r.PathValue("id"))
+		if err != nil {
+			http.Error(w, "invalid connection id", http.StatusBadRequest)
+			return
+		}
+
+		var in testConnectionInput
+		if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+			http.Error(w, "invalid request body", http.StatusBadRequest)
+			return
+		}
+
+		if in.Token == "" {
+			existing, err := client.Connection.Get(r.Context(), id)
+			if err != nil {
+				if ent.IsNotFound(err) {
+					http.Error(w, "connection not found", http.StatusNotFound)
+					return
+				}
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			// Only fall back to the stored token when testing the connection
+			// as actually saved. Otherwise a blank token plus a different
+			// host/port/ssl would make the server send the real credential
+			// to an arbitrary caller-supplied destination.
+			if in.Host != existing.Host || in.Port != existing.Port || in.SSL != existing.Ssl {
+				writeJSON(w, http.StatusOK, testConnectionResult{
+					OK:    false,
+					Error: "token is required when testing a different host, port, or SSL setting than what's saved",
+				})
+				return
+			}
+			in.Token = existing.Token
+		}
+
+		writeJSON(w, http.StatusOK, testConnectionType(r.Context(), in))
 	})
 }
 
