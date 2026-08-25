@@ -145,6 +145,12 @@ separate future increment), dispatching by `type` via `listLibrariesForConnectio
 upstream server returns `502`, distinct from `404` (connection id not found) — the root `web/src/routes/
 Libraries.tsx` page's connection/library selector relies on that distinction to show the right empty state.
 
+`GET /api/connections/{id}/libraries/{key}/items?offset=&limit=` (default `limit` 20) pages through one
+library section's media items, via `backend/internal/plex.ListLibraryItems` →
+`/library/sections/{key}/all?X-Plex-Container-Start=...&X-Plex-Container-Size=...` — Plex's own pagination
+query-param convention. Response is `{items, total, offset, limit}`; the frontend derives Prev/Next
+enabled-state and the "X–Y of N" range purely from `total`/`offset`/`limit`, no separate page-count field.
+
 **Adding a new connection type without heavy refactoring**: the `Connection` entity's fields (`type`, `name`,
 `host`, `port`, `ssl`, `token`) are deliberately generic across host-based server integrations, not
 Plex-specific — a new type is a new `ent/schema/connection.go` enum value plus, on the frontend, a new

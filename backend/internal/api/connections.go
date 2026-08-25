@@ -64,6 +64,26 @@ func listLibrariesForConnection(ctx context.Context, conn *ent.Connection) ([]pl
 	}
 }
 
+// listItemsForConnection dispatches to the client for conn.Type. Same
+// extensibility seam as testConnectionType.
+func listItemsForConnection(ctx context.Context, conn *ent.Connection, libraryKey string, offset, limit int) ([]plex.Item, int, error) {
+	switch conn.Type {
+	case connection.TypePlex:
+		return plex.ListLibraryItems(ctx, plex.Config{Host: conn.Host, Port: conn.Port, SSL: conn.Ssl, Token: conn.Token}, libraryKey, offset, limit)
+	default:
+		return nil, 0, fmt.Errorf("unsupported connection type %q", conn.Type)
+	}
+}
+
+type libraryItemsResult struct {
+	Items  []plex.Item `json:"items"`
+	Total  int         `json:"total"`
+	Offset int         `json:"offset"`
+	Limit  int         `json:"limit"`
+}
+
+const defaultLibraryItemsLimit = 20
+
 // RegisterConnectionRoutes wires the Connection endpoints onto mux.
 func RegisterConnectionRoutes(mux *http.ServeMux, client *ent.Client) {
 	mux.HandleFunc("GET /api/connections", func(w http.ResponseWriter, r *http.Request) {
@@ -240,6 +260,51 @@ func RegisterConnectionRoutes(mux *http.ServeMux, client *ent.Client) {
 		}
 
 		writeJSON(w, http.StatusOK, libraries)
+	})
+
+	mux.HandleFunc("GET /api/connections/{id}/libraries/{key}/items", func(w http.ResponseWriter, r *http.Request) {
+		id, err := strconv.Atoi(r.PathValue("id"))
+		if err != nil {
+			http.Error(w, "invalid connection id", http.StatusBadRequest)
+			return
+		}
+		libraryKey := r.PathValue("key")
+
+		offset := 0
+		if v := r.URL.Query().Get("offset"); v != "" {
+			if n, err := strconv.Atoi(v); err == nil && n >= 0 {
+				offset = n
+			}
+		}
+		limit := defaultLibraryItemsLimit
+		if v := r.URL.Query().Get("limit"); v != "" {
+			if n, err := strconv.Atoi(v); err == nil && n > 0 {
+				limit = n
+			}
+		}
+
+		logger := logging.FromContext(r.Context()).With("connection_id", id, "library_key", libraryKey)
+
+		conn, err := client.Connection.Get(r.Context(), id)
+		if err != nil {
+			if ent.IsNotFound(err) {
+				logger.Warn("list library items: connection not found")
+				http.Error(w, "connection not found", http.StatusNotFound)
+				return
+			}
+			logger.Error("list library items failed", "error", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		items, total, err := listItemsForConnection(r.Context(), conn, libraryKey, offset, limit)
+		if err != nil {
+			logger.Warn("list library items: upstream error", "error", err)
+			http.Error(w, err.Error(), http.StatusBadGateway)
+			return
+		}
+
+		writeJSON(w, http.StatusOK, libraryItemsResult{Items: items, Total: total, Offset: offset, Limit: limit})
 	})
 }
 

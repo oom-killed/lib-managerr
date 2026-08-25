@@ -3,6 +3,8 @@ export type Dict = {
 		save: string;
 		cancel: string;
 		close: string;
+		previous: string;
+		next: string;
 	};
 	nav: {
 		dashboard: string;
@@ -25,6 +27,9 @@ export type Dict = {
 		noConnections: string;
 		loadError: string;
 		noLibraries: string;
+		itemsLoadError: string;
+		noItems: string;
+		pageRange: string;
 	};
 	settings: {
 		general: {
@@ -58,6 +63,8 @@ export const dict: Dict = {
 		save: "Save",
 		cancel: "Cancel",
 		close: "Close",
+		previous: "Previous",
+		next: "Next",
 	},
 	nav: {
 		dashboard: "Dashboard",
@@ -81,6 +88,9 @@ export const dict: Dict = {
 			"No connections configured yet. Add one in Settings › Libraries.",
 		loadError: "Failed to load libraries from this server.",
 		noLibraries: "No libraries found on this server.",
+		itemsLoadError: "Failed to load items from this library.",
+		noItems: "No items in this library.",
+		pageRange: "{{start}}–{{end}} of {{total}}",
 	},
 	settings: {
 		general: {

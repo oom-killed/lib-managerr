@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"strconv"
 	"time"
 )
 
@@ -95,4 +97,51 @@ func ListLibraries(ctx context.Context, cfg Config) ([]Library, error) {
 		libraries = append(libraries, Library{Key: d.Key, Title: d.Title, Type: d.Type})
 	}
 	return libraries, nil
+}
+
+// Item is one piece of media (a movie, a show, ...) within a library section.
+type Item struct {
+	Key   string `json:"key"`
+	Title string `json:"title"`
+	Year  int    `json:"year,omitempty"`
+	Type  string `json:"type"`
+}
+
+type libraryItemsResponse struct {
+	MediaContainer struct {
+		TotalSize int `json:"totalSize"`
+		Metadata  []struct {
+			RatingKey string `json:"ratingKey"`
+			Title     string `json:"title"`
+			Year      int    `json:"year"`
+			Type      string `json:"type"`
+		} `json:"Metadata"`
+	} `json:"MediaContainer"`
+}
+
+// ListLibraryItems fetches a page of media items from one library section,
+// via /library/sections/{key}/all, using Plex's X-Plex-Container-Start/
+// X-Plex-Container-Size query-param pagination convention. Returns the
+// page of items plus the section's total item count.
+func ListLibraryItems(ctx context.Context, cfg Config, sectionKey string, offset, limit int) ([]Item, int, error) {
+	q := url.Values{}
+	q.Set("X-Plex-Container-Start", strconv.Itoa(offset))
+	q.Set("X-Plex-Container-Size", strconv.Itoa(limit))
+	path := "/library/sections/" + url.PathEscape(sectionKey) + "/all?" + q.Encode()
+
+	body, err := get(ctx, cfg, path)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	var parsed libraryItemsResponse
+	if err := json.Unmarshal(body, &parsed); err != nil {
+		return nil, 0, fmt.Errorf("parse library items response: %w", err)
+	}
+
+	items := make([]Item, 0, len(parsed.MediaContainer.Metadata))
+	for _, m := range parsed.MediaContainer.Metadata {
+		items = append(items, Item{Key: m.RatingKey, Title: m.Title, Year: m.Year, Type: m.Type})
+	}
+	return items, parsed.MediaContainer.TotalSize, nil
 }

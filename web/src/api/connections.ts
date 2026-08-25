@@ -117,3 +117,43 @@ export async function fetchConnectionLibraries(
 	}
 	return res.json();
 }
+
+export type LibraryItem = {
+	key: string;
+	title: string;
+	year?: number;
+	type: string;
+};
+
+export type LibraryItemsPage = {
+	items: LibraryItem[];
+	total: number;
+	offset: number;
+	limit: number;
+};
+
+export type FetchLibraryItemsParams = {
+	connectionId: number;
+	libraryKey: string;
+	offset: number;
+	limit: number;
+};
+
+export async function fetchLibraryItems({
+	connectionId,
+	libraryKey,
+	offset,
+	limit,
+}: FetchLibraryItemsParams): Promise<LibraryItemsPage> {
+	const params = new URLSearchParams({
+		offset: String(offset),
+		limit: String(limit),
+	});
+	const res = await fetch(
+		`/api/connections/${connectionId}/libraries/${libraryKey}/items?${params}`,
+	);
+	if (!res.ok) {
+		throw new Error("failed to load library items");
+	}
+	return res.json();
+}

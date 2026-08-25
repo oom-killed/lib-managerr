@@ -5,6 +5,8 @@ export const dict: Dict = {
 		save: "Enregistrer",
 		cancel: "Annuler",
 		close: "Fermer",
+		previous: "Précédent",
+		next: "Suivant",
 	},
 	nav: {
 		dashboard: "Tableau de bord",
@@ -28,6 +30,9 @@ export const dict: Dict = {
 			"Aucune connexion configurée pour le moment. Ajoutez-en une dans Paramètres › Bibliothèques.",
 		loadError: "Échec du chargement des bibliothèques de ce serveur.",
 		noLibraries: "Aucune bibliothèque trouvée sur ce serveur.",
+		itemsLoadError: "Échec du chargement des éléments de cette bibliothèque.",
+		noItems: "Aucun élément dans cette bibliothèque.",
+		pageRange: "{{start}}–{{end}} sur {{total}}",
 	},
 	settings: {
 		general: {
