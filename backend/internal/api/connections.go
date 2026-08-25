@@ -4,7 +4,9 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/oom-killed/lib-managerr/ent"
 	"github.com/oom-killed/lib-managerr/ent/connection"
@@ -50,6 +52,48 @@ func RegisterConnectionRoutes(mux *http.ServeMux, client *ent.Client) {
 			return
 		}
 		writeJSON(w, http.StatusCreated, conn)
+	})
+
+	mux.HandleFunc("PUT /api/connections/{id}", func(w http.ResponseWriter, r *http.Request) {
+		id, err := strconv.Atoi(r.PathValue("id"))
+		if err != nil {
+			http.Error(w, "invalid connection id", http.StatusBadRequest)
+			return
+		}
+
+		var in connectionInput
+		if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+			http.Error(w, "invalid request body", http.StatusBadRequest)
+			return
+		}
+
+		update := client.Connection.UpdateOneID(id).
+			SetName(in.Name).
+			SetHost(in.Host).
+			SetPort(in.Port).
+			SetSsl(in.SSL)
+		// An empty token means "leave the existing token unchanged" — the
+		// API never returns the current token, so there's no other way for
+		// a client to submit "no change" versus "clear it".
+		if in.Token != "" {
+			update = update.SetToken(in.Token)
+		}
+
+		conn, err := update.Save(r.Context())
+		if err != nil {
+			if ent.IsNotFound(err) {
+				http.Error(w, "connection not found", http.StatusNotFound)
+				return
+			}
+			var validationErr *ent.ValidationError
+			if errors.As(err, &validationErr) {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		writeJSON(w, http.StatusOK, conn)
 	})
 }
 

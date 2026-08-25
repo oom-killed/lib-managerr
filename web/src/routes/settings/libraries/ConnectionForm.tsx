@@ -9,7 +9,7 @@ import {
 	type ConnectionType,
 } from "./connectionTypes.ts";
 
-export type ConnectionFormMode = "add" | "view";
+export type ConnectionFormMode = "add" | "edit";
 
 type FieldValue = string | boolean;
 
@@ -54,15 +54,20 @@ export type ConnectionFormProps = {
 
 export function ConnectionForm(props: ConnectionFormProps) {
 	const { t } = useI18n();
-	const [state, setState] = createSignal(toFormState(props.connection));
+	const initialState = toFormState(props.connection);
+	const [state, setState] = createSignal(initialState);
 	const [submitting, setSubmitting] = createSignal(false);
 
 	const isAdd = () => props.mode === "add";
-	const fields = () =>
-		CONNECTION_TYPE_FIELDS[state().type].filter((f) => isAdd() || f.viewable);
+	const isDirty = () =>
+		isAdd() || JSON.stringify(state()) !== JSON.stringify(initialState);
+	const canSave = () => isDirty() && !submitting();
 
 	const handleSubmit = async (e: SubmitEvent) => {
 		e.preventDefault();
+		if (!canSave()) {
+			return;
+		}
 		setSubmitting(true);
 		try {
 			await props.onSubmit({
@@ -90,7 +95,7 @@ export function ConnectionForm(props: ConnectionFormProps) {
 					}
 				/>
 			</Show>
-			<For each={fields()}>
+			<For each={CONNECTION_TYPE_FIELDS[state().type]}>
 				{(field) => (
 					<Show
 						when={field.kind === "checkbox"}
@@ -100,8 +105,12 @@ export function ConnectionForm(props: ConnectionFormProps) {
 								label={t(field.labelKey)}
 								type={field.kind === "checkbox" ? "text" : field.kind}
 								value={String(getFieldValue(state(), field.key))}
-								disabled={!isAdd()}
-								required={isAdd()}
+								required={field.key === "token" ? isAdd() : true}
+								placeholder={
+									field.key === "token" && !isAdd()
+										? t("settings.libraries.tokenEditHint")
+										: undefined
+								}
 								onChange={(value) => setFieldValue(setState, field.key, value)}
 							/>
 						}
@@ -110,7 +119,6 @@ export function ConnectionForm(props: ConnectionFormProps) {
 							id={field.key}
 							label={t(field.labelKey)}
 							checked={Boolean(getFieldValue(state(), field.key))}
-							disabled={!isAdd()}
 							onChange={(checked) =>
 								setFieldValue(setState, field.key, checked)
 							}
@@ -120,13 +128,11 @@ export function ConnectionForm(props: ConnectionFormProps) {
 			</For>
 			<div class="mt-2 flex justify-end gap-2">
 				<Button type="button" variant="secondary" onClick={props.onCancel}>
-					{isAdd() ? t("common.cancel") : t("common.close")}
+					{t("common.cancel")}
 				</Button>
-				<Show when={isAdd()}>
-					<Button type="submit" disabled={submitting()}>
-						{t("common.save")}
-					</Button>
-				</Show>
+				<Button type="submit" disabled={!canSave()}>
+					{t("common.save")}
+				</Button>
 			</div>
 		</form>
 	);

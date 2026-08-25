@@ -33,7 +33,8 @@ export const dict: Dict = {
 			addButton: "Ajouter une bibliothèque",
 			empty: "Aucune bibliothèque connectée pour le moment.",
 			modalTitleAdd: "Ajouter une bibliothèque",
-			modalTitleView: "Bibliothèque",
+			modalTitleEdit: "Modifier la bibliothèque",
+			tokenEditHint: "Laisser vide pour conserver le jeton actuel",
 			fields: {
 				name: "Nom",
 				host: "Hôte",

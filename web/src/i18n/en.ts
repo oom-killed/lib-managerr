@@ -31,7 +31,8 @@ export type Dict = {
 			addButton: string;
 			empty: string;
 			modalTitleAdd: string;
-			modalTitleView: string;
+			modalTitleEdit: string;
+			tokenEditHint: string;
 			fields: {
 				name: string;
 				host: string;
@@ -76,7 +77,8 @@ export const dict: Dict = {
 			addButton: "Add Library",
 			empty: "No libraries connected yet.",
 			modalTitleAdd: "Add Library",
-			modalTitleView: "Library",
+			modalTitleEdit: "Edit Library",
+			tokenEditHint: "Leave blank to keep the current token",
 			fields: {
 				name: "Name",
 				host: "Host",

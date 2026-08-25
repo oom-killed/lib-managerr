@@ -5,12 +5,13 @@ import {
 	type Connection,
 	createConnection,
 	fetchConnections,
+	updateConnection,
 } from "./libraries/api.ts";
 import { ConnectionForm } from "./libraries/ConnectionForm.tsx";
 
 type ModalState =
 	| { mode: "add" }
-	| { mode: "view"; connection: Connection }
+	| { mode: "edit"; connection: Connection }
 	| null;
 
 function Libraries() {
@@ -20,10 +21,15 @@ function Libraries() {
 
 	const closeModal = () => setModal(null);
 
-	const handleCreate = async (
+	const handleSubmit = async (
 		input: Parameters<typeof createConnection>[0],
 	) => {
-		await createConnection(input);
+		const current = modal();
+		if (current?.mode === "edit") {
+			await updateConnection(current.connection.id, input);
+		} else {
+			await createConnection(input);
+		}
 		await refetch();
 		closeModal();
 	};
@@ -48,7 +54,7 @@ function Libraries() {
 								<button
 									type="button"
 									class="w-full appearance-none rounded border border-neutral-200 p-2 text-left text-neutral-900 hover:bg-neutral-100 dark:border-neutral-800 dark:text-neutral-50 dark:hover:bg-neutral-900"
-									onClick={() => setModal({ mode: "view", connection })}
+									onClick={() => setModal({ mode: "edit", connection })}
 								>
 									<div class="font-medium">{connection.name}</div>
 									<div class="text-sm text-neutral-500 dark:text-neutral-400">
@@ -64,8 +70,8 @@ function Libraries() {
 			<Modal
 				open={modal() !== null}
 				title={
-					modal()?.mode === "view"
-						? t("settings.libraries.modalTitleView")
+					modal()?.mode === "edit"
+						? t("settings.libraries.modalTitleEdit")
 						: t("settings.libraries.modalTitleAdd")
 				}
 				onClose={closeModal}
@@ -77,9 +83,9 @@ function Libraries() {
 							<ConnectionForm
 								mode={current.mode}
 								connection={
-									current.mode === "view" ? current.connection : undefined
+									current.mode === "edit" ? current.connection : undefined
 								}
-								onSubmit={handleCreate}
+								onSubmit={handleSubmit}
 								onCancel={closeModal}
 							/>
 						);

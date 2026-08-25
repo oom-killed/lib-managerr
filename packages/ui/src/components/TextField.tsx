@@ -6,6 +6,7 @@ export type TextFieldProps = {
 	onChange: (value: string) => void;
 	disabled?: boolean;
 	required?: boolean;
+	placeholder?: string;
 };
 
 export function TextField(props: TextFieldProps) {
@@ -23,6 +24,7 @@ export function TextField(props: TextFieldProps) {
 				value={props.value}
 				disabled={props.disabled}
 				required={props.required}
+				placeholder={props.placeholder}
 				onInput={(e) => props.onChange(e.currentTarget.value)}
 				class="rounded border border-neutral-300 bg-white px-2 py-1 text-sm text-neutral-900 disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-50"
 			/>

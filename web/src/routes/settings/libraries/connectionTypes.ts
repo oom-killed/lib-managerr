@@ -18,9 +18,6 @@ export type ConnectionFieldConfig = {
 	key: ConnectionFieldKey;
 	labelKey: ConnectionFieldLabelKey;
 	kind: "text" | "number" | "password" | "checkbox";
-	// Whether this field is shown in read-only "view" mode. Secrets like
-	// the token aren't returned by the API, so they can't be viewed.
-	viewable: boolean;
 };
 
 export const CONNECTION_TYPE_OPTIONS: {
@@ -33,35 +30,22 @@ export const CONNECTION_TYPE_FIELDS: Record<
 	ConnectionFieldConfig[]
 > = {
 	plex: [
-		{
-			key: "name",
-			labelKey: "settings.libraries.fields.name",
-			kind: "text",
-			viewable: true,
-		},
-		{
-			key: "host",
-			labelKey: "settings.libraries.fields.host",
-			kind: "text",
-			viewable: true,
-		},
+		{ key: "name", labelKey: "settings.libraries.fields.name", kind: "text" },
+		{ key: "host", labelKey: "settings.libraries.fields.host", kind: "text" },
 		{
 			key: "port",
 			labelKey: "settings.libraries.fields.port",
 			kind: "number",
-			viewable: true,
 		},
 		{
 			key: "ssl",
 			labelKey: "settings.libraries.fields.ssl",
 			kind: "checkbox",
-			viewable: true,
 		},
 		{
 			key: "token",
 			labelKey: "settings.libraries.fields.token",
 			kind: "password",
-			viewable: false,
 		},
 	],
 };

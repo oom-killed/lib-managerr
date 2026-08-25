@@ -109,6 +109,10 @@ Handlers use the generated ent types directly as request/response bodies rather 
 `Connection`'s `Token` field is already tagged `json:"-"` from the schema's `.Sensitive()` field option, so
 it's excluded from API responses for free.
 
+`GET`/`POST`/`PUT /api/connections/{id}` exist so far. Since the API never returns `token`, `PUT` treats an
+empty `token` in the request body as "leave the existing token unchanged" rather than clearing it — there's
+no other way for a client to express "no change" versus "clear it" without the current value to diff against.
+
 **Adding a new connection type without heavy refactoring**: the `Connection` entity's fields (`type`, `name`,
 `host`, `port`, `ssl`, `token`) are deliberately generic across host-based server integrations, not
 Plex-specific — a new type is a new `ent/schema/connection.go` enum value plus, on the frontend, a new

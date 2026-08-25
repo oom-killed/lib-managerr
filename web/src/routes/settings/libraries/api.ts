@@ -39,3 +39,18 @@ export async function createConnection(
 	}
 	return res.json();
 }
+
+export async function updateConnection(
+	id: number,
+	input: ConnectionInput,
+): Promise<Connection> {
+	const res = await fetch(`/api/connections/${id}`, {
+		method: "PUT",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(input),
+	});
+	if (!res.ok) {
+		throw new Error("failed to update connection");
+	}
+	return res.json();
+}
