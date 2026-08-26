@@ -1,12 +1,25 @@
-// Radarr's available cleanup actions (matches Maintainerr's option set).
-// Namespaced under "radarr" implicitly for now since it's the only
-// target — revisit if a non-Radarr action type is ever added.
+// Radarr's and Sonarr's available cleanup actions (matches Maintainerr's
+// option sets). "change_quality_and_search" and "do_nothing" are shared
+// across services/granularities since they mean the same thing everywhere;
+// every other value is specific to one service and, for Sonarr, one
+// granularity level (show/season/episode) — see ruleActions.ts for which.
 export type RuleAction =
 	| "change_quality_and_search"
 	| "delete"
 	| "do_nothing"
 	| "unmonitor_and_delete_files"
-	| "unmonitor_and_keep_files";
+	| "unmonitor_and_keep_files"
+	| "delete_entire_show"
+	| "unmonitor_show_delete_all_episodes"
+	| "unmonitor_show_keep_files"
+	| "unmonitor_show_delete_existing_episodes"
+	| "season_unmonitor_delete_existing_episodes"
+	| "season_unmonitor_delete_season"
+	| "season_unmonitor_delete_season_delete_show_if_empty"
+	| "season_unmonitor_and_unmonitor_show_if_empty"
+	| "season_unmonitor_keep_files"
+	| "episode_unmonitor_delete_episode"
+	| "episode_unmonitor_keep_file";
 
 // For a show library only: whether the action applies at the show,
 // season, or episode level. Undefined for movie libraries, where the

@@ -326,6 +326,21 @@ field) rather than relying on ent's default edge-eager-loading JSON shape, so th
 rule's library media type exactly as before, just applied per-row in `RuleForm.tsx`'s repeatable list instead
 of to a single select.
 
+**Sonarr's action vocabulary** (added next, matching Maintainerr's Sonarr option set) extends
+`RuleActionStep.action` well beyond the original five Radarr values, and — unlike Radarr's, which apply
+uniformly to any movie — is further scoped by granularity: distinct action sets for "show" (6 options,
+e.g. `delete_entire_show`), "season" (6, e.g. `season_unmonitor_delete_season_delete_show_if_empty`), and
+"episode" (3, e.g. `episode_unmonitor_delete_episode`) level rules, prefixed accordingly so a flat enum stays
+unambiguous. `do_nothing` and `change_quality_and_search` are shared across services — the latter reused
+rather than duplicated as a Sonarr-specific value, since it means the same thing for both, restricted to
+`granularities: ["show"]` because that's the only level Maintainerr's own Sonarr option set offers it at.
+`web/src/routes/rules/ruleActions.ts`'s `RuleActionOption` gained a `granularities` field alongside the
+existing `mediaTypes`, and `ruleActionOptionsFor` takes a second `granularity` parameter — checked only when
+`mediaType === "show"`, since movies have no granularity concept at all. `RuleForm.tsx` passes the current
+`granularity()` signal into every call site, so switching granularity (not just library/media type) also
+re-filters and resets any step whose action no longer applies, the same reactive pattern already used for
+media-type changes.
+
 ## Logging
 
 Built on the stdlib `log/slog` — no logging dependency. `backend/internal/logging.New()` builds the logger

@@ -108,11 +108,22 @@ const DefaultAction = ActionDoNothing
 
 // Action values.
 const (
-	ActionChangeQualityAndSearch  Action = "change_quality_and_search"
-	ActionDelete                  Action = "delete"
-	ActionDoNothing               Action = "do_nothing"
-	ActionUnmonitorAndDeleteFiles Action = "unmonitor_and_delete_files"
-	ActionUnmonitorAndKeepFiles   Action = "unmonitor_and_keep_files"
+	ActionChangeQualityAndSearch                       Action = "change_quality_and_search"
+	ActionDelete                                       Action = "delete"
+	ActionDoNothing                                    Action = "do_nothing"
+	ActionUnmonitorAndDeleteFiles                      Action = "unmonitor_and_delete_files"
+	ActionUnmonitorAndKeepFiles                        Action = "unmonitor_and_keep_files"
+	ActionDeleteEntireShow                             Action = "delete_entire_show"
+	ActionUnmonitorShowDeleteAllEpisodes               Action = "unmonitor_show_delete_all_episodes"
+	ActionUnmonitorShowKeepFiles                       Action = "unmonitor_show_keep_files"
+	ActionUnmonitorShowDeleteExistingEpisodes          Action = "unmonitor_show_delete_existing_episodes"
+	ActionSeasonUnmonitorDeleteExistingEpisodes        Action = "season_unmonitor_delete_existing_episodes"
+	ActionSeasonUnmonitorDeleteSeason                  Action = "season_unmonitor_delete_season"
+	ActionSeasonUnmonitorDeleteSeasonDeleteShowIfEmpty Action = "season_unmonitor_delete_season_delete_show_if_empty"
+	ActionSeasonUnmonitorAndUnmonitorShowIfEmpty       Action = "season_unmonitor_and_unmonitor_show_if_empty"
+	ActionSeasonUnmonitorKeepFiles                     Action = "season_unmonitor_keep_files"
+	ActionEpisodeUnmonitorDeleteEpisode                Action = "episode_unmonitor_delete_episode"
+	ActionEpisodeUnmonitorKeepFile                     Action = "episode_unmonitor_keep_file"
 )
 
 func (a Action) String() string {
@@ -122,7 +133,7 @@ func (a Action) String() string {
 // ActionValidator is a validator for the "action" field enum values. It is called by the builders before save.
 func ActionValidator(a Action) error {
 	switch a {
-	case ActionChangeQualityAndSearch, ActionDelete, ActionDoNothing, ActionUnmonitorAndDeleteFiles, ActionUnmonitorAndKeepFiles:
+	case ActionChangeQualityAndSearch, ActionDelete, ActionDoNothing, ActionUnmonitorAndDeleteFiles, ActionUnmonitorAndKeepFiles, ActionDeleteEntireShow, ActionUnmonitorShowDeleteAllEpisodes, ActionUnmonitorShowKeepFiles, ActionUnmonitorShowDeleteExistingEpisodes, ActionSeasonUnmonitorDeleteExistingEpisodes, ActionSeasonUnmonitorDeleteSeason, ActionSeasonUnmonitorDeleteSeasonDeleteShowIfEmpty, ActionSeasonUnmonitorAndUnmonitorShowIfEmpty, ActionSeasonUnmonitorKeepFiles, ActionEpisodeUnmonitorDeleteEpisode, ActionEpisodeUnmonitorKeepFile:
 		return nil
 	default:
 		return fmt.Errorf("ruleactionstep: invalid enum value for action field: %q", a)

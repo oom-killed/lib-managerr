@@ -99,7 +99,7 @@ export function RuleForm(props: RuleFormProps) {
 		libraries()?.find((l) => l.key === libraryKey())?.type;
 
 	const availableActionOptions = () =>
-		ruleActionOptionsFor(selectedLibraryMediaType());
+		ruleActionOptionsFor(selectedLibraryMediaType(), granularity());
 
 	// Reset any step whose action is no longer valid whenever the selected
 	// library's media type changes what's applicable (e.g. switching from a

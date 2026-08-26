@@ -72,6 +72,17 @@ export type Dict = {
 			doNothing: string;
 			unmonitorAndDeleteFiles: string;
 			unmonitorAndKeepFiles: string;
+			deleteEntireShow: string;
+			unmonitorShowDeleteAllEpisodes: string;
+			unmonitorShowKeepFiles: string;
+			unmonitorShowDeleteExistingEpisodes: string;
+			seasonUnmonitorDeleteExistingEpisodes: string;
+			seasonUnmonitorDeleteSeason: string;
+			seasonUnmonitorDeleteSeasonDeleteShowIfEmpty: string;
+			seasonUnmonitorAndUnmonitorShowIfEmpty: string;
+			seasonUnmonitorKeepFiles: string;
+			episodeUnmonitorDeleteEpisode: string;
+			episodeUnmonitorKeepFile: string;
 		};
 		granularity: {
 			show: string;
@@ -189,6 +200,22 @@ export const dict: Dict = {
 			doNothing: "Do nothing",
 			unmonitorAndDeleteFiles: "Unmonitor and delete files",
 			unmonitorAndKeepFiles: "Unmonitor and keep files",
+			deleteEntireShow: "Delete entire show",
+			unmonitorShowDeleteAllEpisodes:
+				"Unmonitor show + seasons, delete all episodes",
+			unmonitorShowKeepFiles: "Unmonitor show + seasons, keep files",
+			unmonitorShowDeleteExistingEpisodes:
+				"Unmonitor show, delete existing episodes",
+			seasonUnmonitorDeleteExistingEpisodes:
+				"Unmonitor and delete existing episodes",
+			seasonUnmonitorDeleteSeason: "Unmonitor and delete season",
+			seasonUnmonitorDeleteSeasonDeleteShowIfEmpty:
+				"Unmonitor and delete season + delete show if empty",
+			seasonUnmonitorAndUnmonitorShowIfEmpty:
+				"Unmonitor season + unmonitor show if empty",
+			seasonUnmonitorKeepFiles: "Unmonitor season and keep files",
+			episodeUnmonitorDeleteEpisode: "Unmonitor and delete episode",
+			episodeUnmonitorKeepFile: "Unmonitor and keep file",
 		},
 		granularity: {
 			show: "Show",

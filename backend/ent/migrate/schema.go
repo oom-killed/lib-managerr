@@ -91,7 +91,7 @@ var (
 		{Name: "position", Type: field.TypeInt},
 		{Name: "delay_amount", Type: field.TypeInt},
 		{Name: "delay_unit", Type: field.TypeEnum, Enums: []string{"hours", "days", "weeks", "months"}},
-		{Name: "action", Type: field.TypeEnum, Enums: []string{"change_quality_and_search", "delete", "do_nothing", "unmonitor_and_delete_files", "unmonitor_and_keep_files"}, Default: "do_nothing"},
+		{Name: "action", Type: field.TypeEnum, Enums: []string{"change_quality_and_search", "delete", "do_nothing", "unmonitor_and_delete_files", "unmonitor_and_keep_files", "delete_entire_show", "unmonitor_show_delete_all_episodes", "unmonitor_show_keep_files", "unmonitor_show_delete_existing_episodes", "season_unmonitor_delete_existing_episodes", "season_unmonitor_delete_season", "season_unmonitor_delete_season_delete_show_if_empty", "season_unmonitor_and_unmonitor_show_if_empty", "season_unmonitor_keep_files", "episode_unmonitor_delete_episode", "episode_unmonitor_keep_file"}, Default: "do_nothing"},
 		{Name: "rule_id", Type: field.TypeInt},
 	}
 	// RuleActionStepsTable holds the schema information for the "rule_action_steps" table.

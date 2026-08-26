@@ -76,6 +76,25 @@ export const dict: Dict = {
 			doNothing: "Ne rien faire",
 			unmonitorAndDeleteFiles: "Ne plus surveiller et supprimer les fichiers",
 			unmonitorAndKeepFiles: "Ne plus surveiller et conserver les fichiers",
+			deleteEntireShow: "Supprimer la série entière",
+			unmonitorShowDeleteAllEpisodes:
+				"Ne plus surveiller la série + les saisons, supprimer tous les épisodes",
+			unmonitorShowKeepFiles:
+				"Ne plus surveiller la série + les saisons, conserver les fichiers",
+			unmonitorShowDeleteExistingEpisodes:
+				"Ne plus surveiller la série, supprimer les épisodes existants",
+			seasonUnmonitorDeleteExistingEpisodes:
+				"Ne plus surveiller et supprimer les épisodes existants",
+			seasonUnmonitorDeleteSeason: "Ne plus surveiller et supprimer la saison",
+			seasonUnmonitorDeleteSeasonDeleteShowIfEmpty:
+				"Ne plus surveiller et supprimer la saison + supprimer la série si vide",
+			seasonUnmonitorAndUnmonitorShowIfEmpty:
+				"Ne plus surveiller la saison + ne plus surveiller la série si vide",
+			seasonUnmonitorKeepFiles:
+				"Ne plus surveiller la saison et conserver les fichiers",
+			episodeUnmonitorDeleteEpisode:
+				"Ne plus surveiller et supprimer l'épisode",
+			episodeUnmonitorKeepFile: "Ne plus surveiller et conserver le fichier",
 		},
 		granularity: {
 			show: "Série",
