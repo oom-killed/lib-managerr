@@ -132,6 +132,11 @@ export type LibrarySection = {
 	type: string;
 };
 
+// Music libraries aren't supported yet — filtered out here (the single
+// place both the root Libraries page and RuleForm's library picker pull
+// from) rather than in each consumer, so nothing needs to remember to
+// exclude them. Plex reports a music section's type as "artist", matching
+// the Library entity's media_type enum.
 export async function fetchConnectionLibraries(
 	connectionId: number,
 ): Promise<LibrarySection[]> {
@@ -139,7 +144,8 @@ export async function fetchConnectionLibraries(
 	if (!res.ok) {
 		throw new Error("failed to load libraries");
 	}
-	return res.json();
+	const libraries: LibrarySection[] = await res.json();
+	return libraries.filter((l) => l.type !== "artist");
 }
 
 export type LibraryItem = {
