@@ -173,6 +173,23 @@ function Libraries() {
 													})}
 												</div>
 											</Show>
+											<Show when={item.radarr}>
+												{(radarr) => (
+													<div class="text-sm text-neutral-500 dark:text-neutral-400">
+														{radarr().tracked
+															? radarr().monitored
+																? t("libraries.radarrMonitored")
+																: t("libraries.radarrUnmonitored")
+															: t("libraries.radarrNotTracked")}
+														<Show
+															when={radarr().tracked && radarr().qualityProfile}
+														>
+															{" · "}
+															{radarr().qualityProfile}
+														</Show>
+													</div>
+												)}
+											</Show>
 										</li>
 									)}
 								</For>

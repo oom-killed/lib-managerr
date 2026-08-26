@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -107,6 +108,14 @@ type Item struct {
 	Type         string `json:"type"`
 	SeasonCount  int    `json:"seasonCount,omitempty"`  // shows only
 	EpisodeCount int    `json:"episodeCount,omitempty"` // shows only
+	// TmdbID is the TheMovieDB id parsed from Plex's Guid list, used to
+	// match this item against other services (e.g. Radarr). Not exposed
+	// over the API — it's a correlation key, not display data.
+	TmdbID int `json:"-"`
+}
+
+type guidRef struct {
+	ID string `json:"id"`
 }
 
 type libraryItemsResponse struct {
@@ -121,8 +130,29 @@ type libraryItemsResponse struct {
 			// childCount is the season count, leafCount the episode count.
 			ChildCount int `json:"childCount"`
 			LeafCount  int `json:"leafCount"`
+			// Every item also has its own "guid" (lowercase, singular)
+			// string — Plex's internal plex://... identifier for the item
+			// itself, distinct from the "Guid" (capital, plural) array of
+			// external-service ids below. Both must be declared explicitly:
+			// without an exact-match field for "guid", Go's json decoder
+			// falls back to case-insensitive matching and misroutes that
+			// string into the Guid array field, since nothing else claims
+			// it — causing a decode error on every real Plex response.
+			PlexGUID string    `json:"guid"`
+			Guid     []guidRef `json:"Guid"`
 		} `json:"Metadata"`
 	} `json:"MediaContainer"`
+}
+
+func tmdbIDFromGuids(guids []guidRef) int {
+	for _, g := range guids {
+		if id, ok := strings.CutPrefix(g.ID, "tmdb://"); ok {
+			if n, err := strconv.Atoi(id); err == nil {
+				return n
+			}
+		}
+	}
+	return 0
 }
 
 // ListLibraryItems fetches a page of media items from one library section,
@@ -133,6 +163,7 @@ func ListLibraryItems(ctx context.Context, cfg Config, sectionKey string, offset
 	q := url.Values{}
 	q.Set("X-Plex-Container-Start", strconv.Itoa(offset))
 	q.Set("X-Plex-Container-Size", strconv.Itoa(limit))
+	q.Set("includeGuids", "1")
 	path := "/library/sections/" + url.PathEscape(sectionKey) + "/all?" + q.Encode()
 
 	body, err := get(ctx, cfg, path)
@@ -154,6 +185,7 @@ func ListLibraryItems(ctx context.Context, cfg Config, sectionKey string, offset
 			Type:         m.Type,
 			SeasonCount:  m.ChildCount,
 			EpisodeCount: m.LeafCount,
+			TmdbID:       tmdbIDFromGuids(m.Guid),
 		})
 	}
 	return items, parsed.MediaContainer.TotalSize, nil

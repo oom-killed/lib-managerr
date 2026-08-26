@@ -154,6 +154,35 @@ For `show`-type items, Plex's `childCount`/`leafCount` fields (season count / ep
 same `/library/sections/{key}/all` response already used for the item list — no extra request — mapped to
 `Item.SeasonCount`/`EpisodeCount`, shown in the UI only when `type === "show"`.
 
+**Cross-service enrichment** (e.g. showing Radarr data on a Plex movie item) is matched by TMDB id, not
+title/year — Plex's item request includes `includeGuids=1`, and `plex.Item.TmdbID` (parsed from the
+`tmdb://<id>` entry in Plex's `Guid` list, `json:"-"` since it's a correlation key, not display data) is
+matched against Radarr's own `tmdbId` field. `backend/internal/api/connections.go`'s `enrichWithRadarr` does
+this: it looks up the first `Connection` of type `radarr` (no per-library association — Radarr enrichment is
+independent of which Plex connection/library is being browsed). Plex is the source of truth for what's
+actually in the library, so only enrich with tracking metadata Plex doesn't already convey (`monitored`,
+quality profile) — not file-presence info Plex already implies by the item existing at all.
+
+`radarrInfo.Tracked` distinguishes "Radarr doesn't have this movie" from "Radarr has it but it's
+unmonitored" — both are meaningfully different, so the `radarr` field is always set on every movie item once
+Radarr was successfully reached, even with no match (`{tracked: false}`), not just when there's a hit. It's
+left `nil` (omitted entirely) only when tracked status genuinely can't be determined at all — no Radarr
+connection configured, or Radarr unreachable — since asserting "not tracked" there would be a guess. Note:
+Plex's real item JSON has *two* guid-shaped keys per item — lowercase singular `"guid"` (Plex's own internal
+`plex://...` identifier, always present, a plain string) and capital plural `"Guid"` (the external-id array,
+only with `includeGuids=1`). Both must be declared as separate struct fields with exact-match tags; declaring
+only `"Guid"` lets Go's json decoder's case-insensitive fallback misroute the lowercase `"guid"` string into
+that field, breaking on every real Plex response (mock test fixtures that omit the lowercase field won't
+catch this — this bit us once already).
+
+`backend/internal/radarr.Cache` (60s TTL, mutex-guarded, keyed by `host:port`) wraps `ListMovies`+
+`ListQualityProfiles` as a pair — constructed once in `main.go`, passed through
+`RegisterConnectionRoutes`/`enrichWithRadarr` — since without it, paginating through a library re-downloads
+Radarr's *entire* movie catalog on every single page request, when only that page's items need matching.
+Deliberately just an in-memory struct, not a general caching layer or anything persistent — the tradeoff is
+staleness (a Radarr change can take up to 60s to show here), acceptable for what's a display feature, not
+a source of truth.
+
 **Adding a new connection type without heavy refactoring**: the `Connection` entity's fields (`type`, `name`,
 `host`, `port`, `ssl`, `token`) are deliberately generic across host-based server integrations, not
 Plex-specific — a new type is a new `ent/schema/connection.go` enum value plus, on the frontend, a new

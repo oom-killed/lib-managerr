@@ -31,6 +31,9 @@ export type Dict = {
 		noItems: string;
 		pageRange: string;
 		showMeta: string;
+		radarrMonitored: string;
+		radarrUnmonitored: string;
+		radarrNotTracked: string;
 	};
 	settings: {
 		general: {
@@ -94,6 +97,9 @@ export const dict: Dict = {
 		noItems: "No items in this library.",
 		pageRange: "{{start}}–{{end}} of {{total}}",
 		showMeta: "{{seasons}} seasons, {{episodes}} episodes",
+		radarrMonitored: "Monitored",
+		radarrUnmonitored: "Unmonitored",
+		radarrNotTracked: "Not tracked in Radarr",
 	},
 	settings: {
 		general: {

@@ -7,11 +7,13 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/oom-killed/lib-managerr/internal/api"
 	"github.com/oom-killed/lib-managerr/internal/db"
 	"github.com/oom-killed/lib-managerr/internal/entdb"
 	"github.com/oom-killed/lib-managerr/internal/logging"
+	"github.com/oom-killed/lib-managerr/internal/radarr"
 	"github.com/oom-killed/lib-managerr/internal/webui"
 )
 
@@ -65,7 +67,8 @@ func main() {
 		w.Write([]byte(`{"status":"ok"}`))
 	})
 
-	api.RegisterConnectionRoutes(mux, client)
+	radarrCache := radarr.NewCache(60 * time.Second)
+	api.RegisterConnectionRoutes(mux, client, radarrCache)
 
 	mux.Handle("/", spaHandler(webui.FS()))
 

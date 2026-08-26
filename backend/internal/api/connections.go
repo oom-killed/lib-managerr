@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -81,17 +82,88 @@ func listItemsForConnection(ctx context.Context, conn *ent.Connection, libraryKe
 	}
 }
 
+// radarrInfo is the subset of Radarr's movie data worth showing alongside
+// a Plex movie item. Plex remains the source of truth for what's actually
+// in the library — this only adds Radarr's tracking metadata, not
+// file-presence info Plex already conveys by the item existing at all.
+// Tracked distinguishes "Radarr doesn't have this movie at all" from
+// "Radarr has it but it's unmonitored" — both are meaningfully different
+// from each other, so this is always set (not omitted) once Radarr was
+// successfully reachable, even when there's no match.
+type radarrInfo struct {
+	Tracked        bool   `json:"tracked"`
+	Monitored      bool   `json:"monitored,omitempty"`
+	QualityProfile string `json:"qualityProfile,omitempty"`
+}
+
+type itemOut struct {
+	plex.Item
+	Radarr *radarrInfo `json:"radarr,omitempty"`
+}
+
+// enrichWithRadarr adds Radarr tracking info to every movie item, matched
+// by TMDB id, whenever a Radarr connection is configured and reachable.
+// The Radarr field is left nil (omitted) only when we genuinely can't
+// determine tracked status at all — no Radarr connection configured, or
+// Radarr unreachable — since asserting "not tracked" there would be a
+// guess, not a fact. This never fails the underlying library-items
+// request; it just leaves items unenriched on any of those failures.
+func enrichWithRadarr(ctx context.Context, client *ent.Client, radarrCache *radarr.Cache, logger *slog.Logger, items []plex.Item) []itemOut {
+	out := make([]itemOut, len(items))
+	for i, it := range items {
+		out[i] = itemOut{Item: it}
+	}
+
+	radarrConn, err := client.Connection.Query().Where(connection.TypeEQ(connection.TypeRadarr)).First(ctx)
+	if err != nil {
+		if !ent.IsNotFound(err) {
+			logger.Warn("radarr enrichment: lookup connection failed", "error", err)
+		}
+		return out
+	}
+
+	cfg := radarr.Config{Host: radarrConn.Host, Port: radarrConn.Port, SSL: radarrConn.Ssl, APIKey: radarrConn.Token}
+
+	movies, profiles, err := radarrCache.GetMoviesAndProfiles(ctx, cfg)
+	if err != nil {
+		logger.Warn("radarr enrichment: fetch movies/profiles failed", "error", err)
+		return out
+	}
+
+	profileNames := make(map[int]string, len(profiles))
+	for _, p := range profiles {
+		profileNames[p.ID] = p.Name
+	}
+	byTmdbID := make(map[int]radarr.Movie, len(movies))
+	for _, m := range movies {
+		byTmdbID[m.TmdbID] = m
+	}
+
+	for i := range out {
+		if out[i].Type != "movie" {
+			continue
+		}
+		m, ok := byTmdbID[out[i].TmdbID] // TmdbID zero-value (no guid) just won't match, same as any other miss
+		if !ok {
+			out[i].Radarr = &radarrInfo{Tracked: false}
+			continue
+		}
+		out[i].Radarr = &radarrInfo{Tracked: true, Monitored: m.Monitored, QualityProfile: profileNames[m.QualityProfileID]}
+	}
+	return out
+}
+
 type libraryItemsResult struct {
-	Items  []plex.Item `json:"items"`
-	Total  int         `json:"total"`
-	Offset int         `json:"offset"`
-	Limit  int         `json:"limit"`
+	Items  []itemOut `json:"items"`
+	Total  int       `json:"total"`
+	Offset int       `json:"offset"`
+	Limit  int       `json:"limit"`
 }
 
 const defaultLibraryItemsLimit = 20
 
 // RegisterConnectionRoutes wires the Connection endpoints onto mux.
-func RegisterConnectionRoutes(mux *http.ServeMux, client *ent.Client) {
+func RegisterConnectionRoutes(mux *http.ServeMux, client *ent.Client, radarrCache *radarr.Cache) {
 	mux.HandleFunc("GET /api/connections", func(w http.ResponseWriter, r *http.Request) {
 		conns, err := client.Connection.Query().All(r.Context())
 		if err != nil {
@@ -310,7 +382,8 @@ func RegisterConnectionRoutes(mux *http.ServeMux, client *ent.Client) {
 			return
 		}
 
-		writeJSON(w, http.StatusOK, libraryItemsResult{Items: items, Total: total, Offset: offset, Limit: limit})
+		enriched := enrichWithRadarr(r.Context(), client, radarrCache, logger, items)
+		writeJSON(w, http.StatusOK, libraryItemsResult{Items: enriched, Total: total, Offset: offset, Limit: limit})
 	})
 }
 

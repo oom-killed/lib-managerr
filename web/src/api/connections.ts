@@ -131,6 +131,11 @@ export type LibraryItem = {
 	type: string;
 	seasonCount?: number;
 	episodeCount?: number;
+	radarr?: {
+		tracked: boolean;
+		monitored?: boolean;
+		qualityProfile?: string;
+	};
 };
 
 export type LibraryItemsPage = {

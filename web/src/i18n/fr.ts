@@ -34,6 +34,9 @@ export const dict: Dict = {
 		noItems: "Aucun élément dans cette bibliothèque.",
 		pageRange: "{{start}}–{{end}} sur {{total}}",
 		showMeta: "{{seasons}} saisons, {{episodes}} épisodes",
+		radarrMonitored: "Surveillé",
+		radarrUnmonitored: "Non surveillé",
+		radarrNotTracked: "Absent de Radarr",
 	},
 	settings: {
 		general: {
