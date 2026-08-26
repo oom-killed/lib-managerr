@@ -66,7 +66,7 @@ var (
 		{Name: "name", Type: field.TypeString},
 		{Name: "enabled", Type: field.TypeBool, Default: true},
 		{Name: "library_key", Type: field.TypeString},
-		{Name: "granularity", Type: field.TypeEnum, Nullable: true, Enums: []string{"season", "episode"}},
+		{Name: "granularity", Type: field.TypeEnum, Nullable: true, Enums: []string{"show", "season", "episode"}},
 		{Name: "connection_id", Type: field.TypeInt},
 	}
 	// RulesTable holds the schema information for the "rules" table.

@@ -74,6 +74,7 @@ export type Dict = {
 			unmonitorAndKeepFiles: string;
 		};
 		granularity: {
+			show: string;
 			season: string;
 			episode: string;
 		};
@@ -190,6 +191,7 @@ export const dict: Dict = {
 			unmonitorAndKeepFiles: "Unmonitor and keep files",
 		},
 		granularity: {
+			show: "Show",
 			season: "Seasons",
 			episode: "Episodes",
 		},

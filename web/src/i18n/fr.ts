@@ -78,6 +78,7 @@ export const dict: Dict = {
 			unmonitorAndKeepFiles: "Ne plus surveiller et conserver les fichiers",
 		},
 		granularity: {
+			show: "Série",
 			season: "Saisons",
 			episode: "Épisodes",
 		},

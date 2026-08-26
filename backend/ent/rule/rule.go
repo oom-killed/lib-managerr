@@ -93,6 +93,7 @@ type Granularity string
 
 // Granularity values.
 const (
+	GranularityShow    Granularity = "show"
 	GranularitySeason  Granularity = "season"
 	GranularityEpisode Granularity = "episode"
 )
@@ -104,7 +105,7 @@ func (gr Granularity) String() string {
 // GranularityValidator is a validator for the "granularity" field enum values. It is called by the builders before save.
 func GranularityValidator(gr Granularity) error {
 	switch gr {
-	case GranularitySeason, GranularityEpisode:
+	case GranularityShow, GranularitySeason, GranularityEpisode:
 		return nil
 	default:
 		return fmt.Errorf("rule: invalid enum value for granularity field: %q", gr)

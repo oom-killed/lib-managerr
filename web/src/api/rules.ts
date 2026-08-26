@@ -8,10 +8,10 @@ export type RuleAction =
 	| "unmonitor_and_delete_files"
 	| "unmonitor_and_keep_files";
 
-// For a show library only: whether the action applies at the season or
-// episode level. Undefined for movie libraries, where the distinction
-// doesn't apply.
-export type RuleGranularity = "season" | "episode";
+// For a show library only: whether the action applies at the show,
+// season, or episode level. Undefined for movie libraries, where the
+// distinction doesn't apply.
+export type RuleGranularity = "show" | "season" | "episode";
 
 export type RuleDelayUnit = "hours" | "days" | "weeks" | "months";
 

@@ -242,6 +242,7 @@ export function RuleForm(props: RuleFormProps) {
 					<Select
 						id="rule-granularity"
 						options={[
+							{ value: "show", label: t("rules.granularity.show") },
 							{ value: "season", label: t("rules.granularity.season") },
 							{ value: "episode", label: t("rules.granularity.episode") },
 						]}
