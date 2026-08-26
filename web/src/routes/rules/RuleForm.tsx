@@ -6,7 +6,12 @@ import {
 	fetchConnections,
 	LIBRARY_CAPABLE_CONNECTION_TYPES,
 } from "../../api/connections.ts";
-import type { Rule, RuleAction, RuleInput } from "../../api/rules.ts";
+import type {
+	Rule,
+	RuleAction,
+	RuleGranularity,
+	RuleInput,
+} from "../../api/rules.ts";
 import { useI18n } from "../../i18n/index.tsx";
 import { ruleActionOptionsFor } from "./ruleActions.ts";
 
@@ -32,6 +37,9 @@ export function RuleForm(props: RuleFormProps) {
 	const [libraryKey, setLibraryKey] = createSignal<string | undefined>(
 		props.rule?.libraryKey,
 	);
+	const [granularity, setGranularity] = createSignal<
+		RuleGranularity | undefined
+	>(props.rule?.granularity);
 	const [submitting, setSubmitting] = createSignal(false);
 
 	const [connections] = createResource(fetchConnections);
@@ -89,10 +97,27 @@ export function RuleForm(props: RuleFormProps) {
 		}
 	});
 
+	const isShowLibrary = () => selectedLibraryMediaType() === "show";
+
+	// Default to "season" once a show library is selected (unless a rule
+	// already targeting a show library brought its own value); clear it
+	// entirely when the library isn't a show library, since the
+	// distinction is meaningless for movies.
+	createEffect(() => {
+		if (isShowLibrary()) {
+			if (granularity() === undefined) {
+				setGranularity("season");
+			}
+		} else if (granularity() !== undefined) {
+			setGranularity(undefined);
+		}
+	});
+
 	const canSave = () =>
 		name().trim() !== "" &&
 		connectionId() !== undefined &&
 		libraryKey() !== undefined &&
+		(!isShowLibrary() || granularity() !== undefined) &&
 		!submitting();
 
 	const handleSubmit = async (e: SubmitEvent) => {
@@ -110,6 +135,7 @@ export function RuleForm(props: RuleFormProps) {
 				connectionId: connectionId()!,
 				// biome-ignore lint/style/noNonNullAssertion: guarded by canSave()
 				libraryKey: libraryKey()!,
+				granularity: granularity(),
 			});
 		} finally {
 			setSubmitting(false);
@@ -164,6 +190,25 @@ export function RuleForm(props: RuleFormProps) {
 						options={libraryOptions()}
 						value={libraryKey() ?? ""}
 						onChange={setLibraryKey}
+					/>
+				</div>
+			</Show>
+			<Show when={isShowLibrary()}>
+				<div class="flex flex-col gap-1">
+					<label
+						for="rule-granularity"
+						class="text-sm text-neutral-700 dark:text-neutral-300"
+					>
+						{t("rules.fields.granularity")}
+					</label>
+					<Select
+						id="rule-granularity"
+						options={[
+							{ value: "season", label: t("rules.granularity.season") },
+							{ value: "episode", label: t("rules.granularity.episode") },
+						]}
+						value={granularity() ?? "season"}
+						onChange={(value) => setGranularity(value as RuleGranularity)}
 					/>
 				</div>
 			</Show>

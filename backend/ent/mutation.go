@@ -1622,6 +1622,7 @@ type RuleMutation struct {
 	enabled           *bool
 	action            *rule.Action
 	library_key       *string
+	granularity       *rule.Granularity
 	clearedFields     map[string]struct{}
 	connection        *int
 	clearedconnection bool
@@ -1980,6 +1981,55 @@ func (m *RuleMutation) ResetLibraryKey() {
 	m.library_key = nil
 }
 
+// SetGranularity sets the "granularity" field.
+func (m *RuleMutation) SetGranularity(r rule.Granularity) {
+	m.granularity = &r
+}
+
+// Granularity returns the value of the "granularity" field in the mutation.
+func (m *RuleMutation) Granularity() (r rule.Granularity, exists bool) {
+	v := m.granularity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGranularity returns the old "granularity" field's value of the Rule entity.
+// If the Rule object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RuleMutation) OldGranularity(ctx context.Context) (v *rule.Granularity, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGranularity is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGranularity requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGranularity: %w", err)
+	}
+	return oldValue.Granularity, nil
+}
+
+// ClearGranularity clears the value of the "granularity" field.
+func (m *RuleMutation) ClearGranularity() {
+	m.granularity = nil
+	m.clearedFields[rule.FieldGranularity] = struct{}{}
+}
+
+// GranularityCleared returns if the "granularity" field was cleared in this mutation.
+func (m *RuleMutation) GranularityCleared() bool {
+	_, ok := m.clearedFields[rule.FieldGranularity]
+	return ok
+}
+
+// ResetGranularity resets all changes to the "granularity" field.
+func (m *RuleMutation) ResetGranularity() {
+	m.granularity = nil
+	delete(m.clearedFields, rule.FieldGranularity)
+}
+
 // ClearConnection clears the "connection" edge to the Connection entity.
 func (m *RuleMutation) ClearConnection() {
 	m.clearedconnection = true
@@ -2041,7 +2091,7 @@ func (m *RuleMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *RuleMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 8)
 	if m.created_at != nil {
 		fields = append(fields, rule.FieldCreatedAt)
 	}
@@ -2062,6 +2112,9 @@ func (m *RuleMutation) Fields() []string {
 	}
 	if m.library_key != nil {
 		fields = append(fields, rule.FieldLibraryKey)
+	}
+	if m.granularity != nil {
+		fields = append(fields, rule.FieldGranularity)
 	}
 	return fields
 }
@@ -2085,6 +2138,8 @@ func (m *RuleMutation) Field(name string) (ent.Value, bool) {
 		return m.ConnectionID()
 	case rule.FieldLibraryKey:
 		return m.LibraryKey()
+	case rule.FieldGranularity:
+		return m.Granularity()
 	}
 	return nil, false
 }
@@ -2108,6 +2163,8 @@ func (m *RuleMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldConnectionID(ctx)
 	case rule.FieldLibraryKey:
 		return m.OldLibraryKey(ctx)
+	case rule.FieldGranularity:
+		return m.OldGranularity(ctx)
 	}
 	return nil, fmt.Errorf("unknown Rule field %s", name)
 }
@@ -2166,6 +2223,13 @@ func (m *RuleMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetLibraryKey(v)
 		return nil
+	case rule.FieldGranularity:
+		v, ok := value.(rule.Granularity)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGranularity(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Rule field %s", name)
 }
@@ -2198,7 +2262,11 @@ func (m *RuleMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *RuleMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(rule.FieldGranularity) {
+		fields = append(fields, rule.FieldGranularity)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -2211,6 +2279,11 @@ func (m *RuleMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *RuleMutation) ClearField(name string) error {
+	switch name {
+	case rule.FieldGranularity:
+		m.ClearGranularity()
+		return nil
+	}
 	return fmt.Errorf("unknown Rule nullable field %s", name)
 }
 
@@ -2238,6 +2311,9 @@ func (m *RuleMutation) ResetField(name string) error {
 		return nil
 	case rule.FieldLibraryKey:
 		m.ResetLibraryKey()
+		return nil
+	case rule.FieldGranularity:
+		m.ResetGranularity()
 		return nil
 	}
 	return fmt.Errorf("unknown Rule field %s", name)

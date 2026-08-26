@@ -63,6 +63,7 @@ export const dict: Dict = {
 			action: "Action",
 			connection: "Connexion",
 			library: "Bibliothèque",
+			granularity: "S'applique à",
 		},
 		actions: {
 			changeQualityAndSearch: "Changer le profil de qualité et rechercher",
@@ -70,6 +71,10 @@ export const dict: Dict = {
 			doNothing: "Ne rien faire",
 			unmonitorAndDeleteFiles: "Ne plus surveiller et supprimer les fichiers",
 			unmonitorAndKeepFiles: "Ne plus surveiller et conserver les fichiers",
+		},
+		granularity: {
+			season: "Saisons",
+			episode: "Épisodes",
 		},
 	},
 	settings: {

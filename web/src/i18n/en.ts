@@ -59,6 +59,7 @@ export type Dict = {
 			action: string;
 			connection: string;
 			library: string;
+			granularity: string;
 		};
 		actions: {
 			changeQualityAndSearch: string;
@@ -66,6 +67,10 @@ export type Dict = {
 			doNothing: string;
 			unmonitorAndDeleteFiles: string;
 			unmonitorAndKeepFiles: string;
+		};
+		granularity: {
+			season: string;
+			episode: string;
 		};
 	};
 	settings: {
@@ -159,6 +164,7 @@ export const dict: Dict = {
 			action: "Action",
 			connection: "Connection",
 			library: "Library",
+			granularity: "Applies to",
 		},
 		actions: {
 			changeQualityAndSearch: "Change quality profile and search",
@@ -166,6 +172,10 @@ export const dict: Dict = {
 			doNothing: "Do nothing",
 			unmonitorAndDeleteFiles: "Unmonitor and delete files",
 			unmonitorAndKeepFiles: "Unmonitor and keep files",
+		},
+		granularity: {
+			season: "Seasons",
+			episode: "Episodes",
 		},
 	},
 	settings: {

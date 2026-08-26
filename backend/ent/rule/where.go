@@ -345,6 +345,36 @@ func LibraryKeyContainsFold(v string) predicate.Rule {
 	return predicate.Rule(sql.FieldContainsFold(FieldLibraryKey, v))
 }
 
+// GranularityEQ applies the EQ predicate on the "granularity" field.
+func GranularityEQ(v Granularity) predicate.Rule {
+	return predicate.Rule(sql.FieldEQ(FieldGranularity, v))
+}
+
+// GranularityNEQ applies the NEQ predicate on the "granularity" field.
+func GranularityNEQ(v Granularity) predicate.Rule {
+	return predicate.Rule(sql.FieldNEQ(FieldGranularity, v))
+}
+
+// GranularityIn applies the In predicate on the "granularity" field.
+func GranularityIn(vs ...Granularity) predicate.Rule {
+	return predicate.Rule(sql.FieldIn(FieldGranularity, vs...))
+}
+
+// GranularityNotIn applies the NotIn predicate on the "granularity" field.
+func GranularityNotIn(vs ...Granularity) predicate.Rule {
+	return predicate.Rule(sql.FieldNotIn(FieldGranularity, vs...))
+}
+
+// GranularityIsNil applies the IsNil predicate on the "granularity" field.
+func GranularityIsNil() predicate.Rule {
+	return predicate.Rule(sql.FieldIsNull(FieldGranularity))
+}
+
+// GranularityNotNil applies the NotNil predicate on the "granularity" field.
+func GranularityNotNil() predicate.Rule {
+	return predicate.Rule(sql.FieldNotNull(FieldGranularity))
+}
+
 // HasConnection applies the HasEdge predicate on the "connection" edge.
 func HasConnection() predicate.Rule {
 	return predicate.Rule(func(s *sql.Selector) {

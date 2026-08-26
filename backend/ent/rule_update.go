@@ -105,6 +105,26 @@ func (_u *RuleUpdate) SetNillableLibraryKey(v *string) *RuleUpdate {
 	return _u
 }
 
+// SetGranularity sets the "granularity" field.
+func (_u *RuleUpdate) SetGranularity(v rule.Granularity) *RuleUpdate {
+	_u.mutation.SetGranularity(v)
+	return _u
+}
+
+// SetNillableGranularity sets the "granularity" field if the given value is not nil.
+func (_u *RuleUpdate) SetNillableGranularity(v *rule.Granularity) *RuleUpdate {
+	if v != nil {
+		_u.SetGranularity(*v)
+	}
+	return _u
+}
+
+// ClearGranularity clears the value of the "granularity" field.
+func (_u *RuleUpdate) ClearGranularity() *RuleUpdate {
+	_u.mutation.ClearGranularity()
+	return _u
+}
+
 // SetConnection sets the "connection" edge to the Connection entity.
 func (_u *RuleUpdate) SetConnection(v *Connection) *RuleUpdate {
 	return _u.SetConnectionID(v.ID)
@@ -174,6 +194,11 @@ func (_u *RuleUpdate) check() error {
 			return &ValidationError{Name: "library_key", err: fmt.Errorf(`ent: validator failed for field "Rule.library_key": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Granularity(); ok {
+		if err := rule.GranularityValidator(v); err != nil {
+			return &ValidationError{Name: "granularity", err: fmt.Errorf(`ent: validator failed for field "Rule.granularity": %w`, err)}
+		}
+	}
 	if _u.mutation.ConnectionCleared() && len(_u.mutation.ConnectionIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Rule.connection"`)
 	}
@@ -206,6 +231,12 @@ func (_u *RuleUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.LibraryKey(); ok {
 		_spec.SetField(rule.FieldLibraryKey, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Granularity(); ok {
+		_spec.SetField(rule.FieldGranularity, field.TypeEnum, value)
+	}
+	if _u.mutation.GranularityCleared() {
+		_spec.ClearField(rule.FieldGranularity, field.TypeEnum)
 	}
 	if _u.mutation.ConnectionCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -332,6 +363,26 @@ func (_u *RuleUpdateOne) SetNillableLibraryKey(v *string) *RuleUpdateOne {
 	return _u
 }
 
+// SetGranularity sets the "granularity" field.
+func (_u *RuleUpdateOne) SetGranularity(v rule.Granularity) *RuleUpdateOne {
+	_u.mutation.SetGranularity(v)
+	return _u
+}
+
+// SetNillableGranularity sets the "granularity" field if the given value is not nil.
+func (_u *RuleUpdateOne) SetNillableGranularity(v *rule.Granularity) *RuleUpdateOne {
+	if v != nil {
+		_u.SetGranularity(*v)
+	}
+	return _u
+}
+
+// ClearGranularity clears the value of the "granularity" field.
+func (_u *RuleUpdateOne) ClearGranularity() *RuleUpdateOne {
+	_u.mutation.ClearGranularity()
+	return _u
+}
+
 // SetConnection sets the "connection" edge to the Connection entity.
 func (_u *RuleUpdateOne) SetConnection(v *Connection) *RuleUpdateOne {
 	return _u.SetConnectionID(v.ID)
@@ -414,6 +465,11 @@ func (_u *RuleUpdateOne) check() error {
 			return &ValidationError{Name: "library_key", err: fmt.Errorf(`ent: validator failed for field "Rule.library_key": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Granularity(); ok {
+		if err := rule.GranularityValidator(v); err != nil {
+			return &ValidationError{Name: "granularity", err: fmt.Errorf(`ent: validator failed for field "Rule.granularity": %w`, err)}
+		}
+	}
 	if _u.mutation.ConnectionCleared() && len(_u.mutation.ConnectionIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Rule.connection"`)
 	}
@@ -463,6 +519,12 @@ func (_u *RuleUpdateOne) sqlSave(ctx context.Context) (_node *Rule, err error) {
 	}
 	if value, ok := _u.mutation.LibraryKey(); ok {
 		_spec.SetField(rule.FieldLibraryKey, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Granularity(); ok {
+		_spec.SetField(rule.FieldGranularity, field.TypeEnum, value)
+	}
+	if _u.mutation.GranularityCleared() {
+		_spec.ClearField(rule.FieldGranularity, field.TypeEnum)
 	}
 	if _u.mutation.ConnectionCleared() {
 		edge := &sqlgraph.EdgeSpec{

@@ -29,6 +29,8 @@ const (
 	FieldConnectionID = "connection_id"
 	// FieldLibraryKey holds the string denoting the library_key field in the database.
 	FieldLibraryKey = "library_key"
+	// FieldGranularity holds the string denoting the granularity field in the database.
+	FieldGranularity = "granularity"
 	// EdgeConnection holds the string denoting the connection edge name in mutations.
 	EdgeConnection = "connection"
 	// Table holds the table name of the rule in the database.
@@ -52,6 +54,7 @@ var Columns = []string{
 	FieldAction,
 	FieldConnectionID,
 	FieldLibraryKey,
+	FieldGranularity,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -108,6 +111,29 @@ func ActionValidator(a Action) error {
 	}
 }
 
+// Granularity defines the type for the "granularity" enum field.
+type Granularity string
+
+// Granularity values.
+const (
+	GranularitySeason  Granularity = "season"
+	GranularityEpisode Granularity = "episode"
+)
+
+func (gr Granularity) String() string {
+	return string(gr)
+}
+
+// GranularityValidator is a validator for the "granularity" field enum values. It is called by the builders before save.
+func GranularityValidator(gr Granularity) error {
+	switch gr {
+	case GranularitySeason, GranularityEpisode:
+		return nil
+	default:
+		return fmt.Errorf("rule: invalid enum value for granularity field: %q", gr)
+	}
+}
+
 // OrderOption defines the ordering options for the Rule queries.
 type OrderOption func(*sql.Selector)
 
@@ -149,6 +175,11 @@ func ByConnectionID(opts ...sql.OrderTermOption) OrderOption {
 // ByLibraryKey orders the results by the library_key field.
 func ByLibraryKey(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLibraryKey, opts...).ToFunc()
+}
+
+// ByGranularity orders the results by the granularity field.
+func ByGranularity(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldGranularity, opts...).ToFunc()
 }
 
 // ByConnectionField orders the results by connection field.

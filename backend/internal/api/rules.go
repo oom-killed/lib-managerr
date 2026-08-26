@@ -12,11 +12,12 @@ import (
 )
 
 type ruleInput struct {
-	Name         string      `json:"name"`
-	Enabled      bool        `json:"enabled"`
-	Action       rule.Action `json:"action"`
-	ConnectionID int         `json:"connectionId"`
-	LibraryKey   string      `json:"libraryKey"`
+	Name         string            `json:"name"`
+	Enabled      bool              `json:"enabled"`
+	Action       rule.Action       `json:"action"`
+	ConnectionID int               `json:"connectionId"`
+	LibraryKey   string            `json:"libraryKey"`
+	Granularity  *rule.Granularity `json:"granularity"`
 }
 
 // RegisterRuleRoutes wires the Rule endpoints onto mux.
@@ -45,6 +46,9 @@ func RegisterRuleRoutes(mux *http.ServeMux, client *ent.Client) {
 			SetLibraryKey(in.LibraryKey)
 		if in.Action != "" {
 			create = create.SetAction(in.Action)
+		}
+		if in.Granularity != nil {
+			create = create.SetGranularity(*in.Granularity)
 		}
 		created, err := create.Save(r.Context())
 		if err != nil {
@@ -76,6 +80,16 @@ func RegisterRuleRoutes(mux *http.ServeMux, client *ent.Client) {
 			SetLibraryKey(in.LibraryKey)
 		if in.Action != "" {
 			update = update.SetAction(in.Action)
+		}
+		// Unlike Action, Granularity is meaningfully absent (movie
+		// libraries) rather than just "unspecified" — an omitted field
+		// clears any previously-set value instead of leaving it unchanged,
+		// so switching a rule from a show library to a movie library
+		// doesn't leave a stale season/episode value behind.
+		if in.Granularity != nil {
+			update = update.SetGranularity(*in.Granularity)
+		} else {
+			update = update.ClearGranularity()
 		}
 		updated, err := update.Save(r.Context())
 		if err != nil {

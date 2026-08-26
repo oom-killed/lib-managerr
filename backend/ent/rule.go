@@ -32,6 +32,8 @@ type Rule struct {
 	ConnectionID int `json:"connectionId,omitempty"`
 	// LibraryKey holds the value of the "library_key" field.
 	LibraryKey string `json:"libraryKey,omitempty"`
+	// Granularity holds the value of the "granularity" field.
+	Granularity *rule.Granularity `json:"granularity,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the RuleQuery when eager-loading is set.
 	Edges        RuleEdges `json:"edges"`
@@ -67,7 +69,7 @@ func (*Rule) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case rule.FieldID, rule.FieldConnectionID:
 			values[i] = new(sql.NullInt64)
-		case rule.FieldName, rule.FieldAction, rule.FieldLibraryKey:
+		case rule.FieldName, rule.FieldAction, rule.FieldLibraryKey, rule.FieldGranularity:
 			values[i] = new(sql.NullString)
 		case rule.FieldCreatedAt, rule.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -134,6 +136,13 @@ func (_m *Rule) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.LibraryKey = value.String
 			}
+		case rule.FieldGranularity:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field granularity", values[i])
+			} else if value.Valid {
+				_m.Granularity = new(rule.Granularity)
+				*_m.Granularity = rule.Granularity(value.String)
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -195,6 +204,11 @@ func (_m *Rule) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("library_key=")
 	builder.WriteString(_m.LibraryKey)
+	builder.WriteString(", ")
+	if v := _m.Granularity; v != nil {
+		builder.WriteString("granularity=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -47,6 +47,14 @@ func (Rule) Fields() []ent.Field {
 		field.String("library_key").
 			NotEmpty().
 			StructTag(`json:"libraryKey,omitempty"`),
+		// For a show library only: whether the action applies at the season
+		// or episode level. Null for movie libraries, where the distinction
+		// doesn't apply — enforced client-side (RuleForm.tsx), same as the
+		// action/media-type pairing.
+		field.Enum("granularity").
+			Values("season", "episode").
+			Optional().
+			Nillable(),
 	}
 }
 

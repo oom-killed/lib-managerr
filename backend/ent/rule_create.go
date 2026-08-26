@@ -95,6 +95,20 @@ func (_c *RuleCreate) SetLibraryKey(v string) *RuleCreate {
 	return _c
 }
 
+// SetGranularity sets the "granularity" field.
+func (_c *RuleCreate) SetGranularity(v rule.Granularity) *RuleCreate {
+	_c.mutation.SetGranularity(v)
+	return _c
+}
+
+// SetNillableGranularity sets the "granularity" field if the given value is not nil.
+func (_c *RuleCreate) SetNillableGranularity(v *rule.Granularity) *RuleCreate {
+	if v != nil {
+		_c.SetGranularity(*v)
+	}
+	return _c
+}
+
 // SetConnection sets the "connection" edge to the Connection entity.
 func (_c *RuleCreate) SetConnection(v *Connection) *RuleCreate {
 	return _c.SetConnectionID(v.ID)
@@ -191,6 +205,11 @@ func (_c *RuleCreate) check() error {
 			return &ValidationError{Name: "library_key", err: fmt.Errorf(`ent: validator failed for field "Rule.library_key": %w`, err)}
 		}
 	}
+	if v, ok := _c.mutation.Granularity(); ok {
+		if err := rule.GranularityValidator(v); err != nil {
+			return &ValidationError{Name: "granularity", err: fmt.Errorf(`ent: validator failed for field "Rule.granularity": %w`, err)}
+		}
+	}
 	if len(_c.mutation.ConnectionIDs()) == 0 {
 		return &ValidationError{Name: "connection", err: errors.New(`ent: missing required edge "Rule.connection"`)}
 	}
@@ -243,6 +262,10 @@ func (_c *RuleCreate) createSpec() (*Rule, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.LibraryKey(); ok {
 		_spec.SetField(rule.FieldLibraryKey, field.TypeString, value)
 		_node.LibraryKey = value
+	}
+	if value, ok := _c.mutation.Granularity(); ok {
+		_spec.SetField(rule.FieldGranularity, field.TypeEnum, value)
+		_node.Granularity = &value
 	}
 	if nodes := _c.mutation.ConnectionIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

@@ -295,6 +295,19 @@ still-valid option whenever that type changes what's applicable — e.g. switchi
 with action `delete` to a show library resets it to `do_nothing`, since `delete` wouldn't mean anything
 there.
 
+**`Rule.granularity`** (season vs. episode, added next) only applies to show libraries — `Optional().
+Nillable()` in the ent schema so it's genuinely absent (`null`/omitted) for movie libraries rather than an
+"unset" value that happens not to matter, mirroring how `action`'s media-type applicability is handled at
+the UI level but enforced more strictly here since a stale season/episode value would be actively wrong
+data, not just an inert one. Unlike `action` on `PUT` (unchanged when omitted), `granularity` is *cleared*
+when omitted from a `PUT /api/rules/{id}` body — the two fields need opposite omit-semantics because a
+missing `action` means "the client didn't touch this field" while a missing `granularity` means "this
+library isn't a show library," which must actively unset any previous value (e.g. a rule retargeted from a
+show library to a movie library). `RuleForm.tsx` shows the season/episode `Select` only when
+`isShowLibrary()`, defaults new selections to "season," and clears the local `granularity` signal outright
+when the selected library isn't a show library, so switching a rule's target library away from TV shows
+can't leave a stale season/episode choice sitting unsent in the form state.
+
 ## Logging
 
 Built on the stdlib `log/slog` — no logging dependency. `backend/internal/logging.New()` builds the logger
