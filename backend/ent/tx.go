@@ -16,6 +16,8 @@ type Tx struct {
 	Connection *ConnectionClient
 	// Library is the client for interacting with the Library builders.
 	Library *LibraryClient
+	// Rule is the client for interacting with the Rule builders.
+	Rule *RuleClient
 
 	// lazily loaded.
 	client     *Client
@@ -149,6 +151,7 @@ func (tx *Tx) Client() *Client {
 func (tx *Tx) init() {
 	tx.Connection = NewConnectionClient(tx.config)
 	tx.Library = NewLibraryClient(tx.config)
+	tx.Rule = NewRuleClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.

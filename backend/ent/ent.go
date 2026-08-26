@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/oom-killed/lib-managerr/ent/connection"
 	"github.com/oom-killed/lib-managerr/ent/library"
+	"github.com/oom-killed/lib-managerr/ent/rule"
 )
 
 // ent aliases to avoid import conflicts in user's code.
@@ -76,6 +77,7 @@ func checkColumn(t, c string) error {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
 			connection.Table: connection.ValidColumn,
 			library.Table:    library.ValidColumn,
+			rule.Table:       rule.ValidColumn,
 		})
 	})
 	return columnCheck(t, c)

@@ -7,6 +7,7 @@ export const dict: Dict = {
 		close: "Fermer",
 		previous: "Précédent",
 		next: "Suivant",
+		delete: "Supprimer",
 	},
 	nav: {
 		dashboard: "Tableau de bord",
@@ -51,6 +52,15 @@ export const dict: Dict = {
 	rules: {
 		title: "Règles",
 		empty: "Aucune règle configurée pour le moment.",
+		addButton: "Ajouter une règle",
+		modalTitleAdd: "Ajouter une règle",
+		modalTitleEdit: "Modifier la règle",
+		enabledLabel: "Activée",
+		disabledLabel: "Désactivée",
+		fields: {
+			name: "Nom",
+			enabled: "Activée",
+		},
 	},
 	settings: {
 		general: {

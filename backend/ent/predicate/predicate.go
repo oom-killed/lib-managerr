@@ -11,3 +11,6 @@ type Connection func(*sql.Selector)
 
 // Library is the predicate function for library builders.
 type Library func(*sql.Selector)
+
+// Rule is the predicate function for rule builders.
+type Rule func(*sql.Selector)

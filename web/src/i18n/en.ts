@@ -5,6 +5,7 @@ export type Dict = {
 		close: string;
 		previous: string;
 		next: string;
+		delete: string;
 	};
 	nav: {
 		dashboard: string;
@@ -47,6 +48,15 @@ export type Dict = {
 	rules: {
 		title: string;
 		empty: string;
+		addButton: string;
+		modalTitleAdd: string;
+		modalTitleEdit: string;
+		enabledLabel: string;
+		disabledLabel: string;
+		fields: {
+			name: string;
+			enabled: string;
+		};
 	};
 	settings: {
 		general: {
@@ -83,6 +93,7 @@ export const dict: Dict = {
 		close: "Close",
 		previous: "Previous",
 		next: "Next",
+		delete: "Delete",
 	},
 	nav: {
 		dashboard: "Dashboard",
@@ -127,6 +138,15 @@ export const dict: Dict = {
 	rules: {
 		title: "Rules",
 		empty: "No rules configured yet.",
+		addButton: "Add Rule",
+		modalTitleAdd: "Add Rule",
+		modalTitleEdit: "Edit Rule",
+		enabledLabel: "Enabled",
+		disabledLabel: "Disabled",
+		fields: {
+			name: "Name",
+			enabled: "Enabled",
+		},
 	},
 	settings: {
 		general: {

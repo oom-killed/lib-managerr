@@ -7,6 +7,7 @@ import (
 
 	"github.com/oom-killed/lib-managerr/ent/connection"
 	"github.com/oom-killed/lib-managerr/ent/library"
+	"github.com/oom-killed/lib-managerr/ent/rule"
 	"github.com/oom-killed/lib-managerr/ent/schema"
 )
 
@@ -76,4 +77,27 @@ func init() {
 	libraryDescEnabled := libraryFields[3].Descriptor()
 	// library.DefaultEnabled holds the default value on creation for the enabled field.
 	library.DefaultEnabled = libraryDescEnabled.Default.(bool)
+	ruleMixin := schema.Rule{}.Mixin()
+	ruleMixinFields0 := ruleMixin[0].Fields()
+	_ = ruleMixinFields0
+	ruleFields := schema.Rule{}.Fields()
+	_ = ruleFields
+	// ruleDescCreatedAt is the schema descriptor for created_at field.
+	ruleDescCreatedAt := ruleMixinFields0[0].Descriptor()
+	// rule.DefaultCreatedAt holds the default value on creation for the created_at field.
+	rule.DefaultCreatedAt = ruleDescCreatedAt.Default.(func() time.Time)
+	// ruleDescUpdatedAt is the schema descriptor for updated_at field.
+	ruleDescUpdatedAt := ruleMixinFields0[1].Descriptor()
+	// rule.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	rule.DefaultUpdatedAt = ruleDescUpdatedAt.Default.(func() time.Time)
+	// rule.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	rule.UpdateDefaultUpdatedAt = ruleDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// ruleDescName is the schema descriptor for name field.
+	ruleDescName := ruleFields[0].Descriptor()
+	// rule.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	rule.NameValidator = ruleDescName.Validators[0].(func(string) error)
+	// ruleDescEnabled is the schema descriptor for enabled field.
+	ruleDescEnabled := ruleFields[1].Descriptor()
+	// rule.DefaultEnabled holds the default value on creation for the enabled field.
+	rule.DefaultEnabled = ruleDescEnabled.Default.(bool)
 }

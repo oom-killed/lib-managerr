@@ -83,6 +83,7 @@ func main() {
 	api.StartHealthChecker(context.Background(), client, statusStore, healthInterval, logger)
 
 	api.RegisterConnectionRoutes(mux, client, radarrCache, sonarrCache, statusStore)
+	api.RegisterRuleRoutes(mux, client)
 
 	mux.Handle("/", spaHandler(webui.FS()))
 

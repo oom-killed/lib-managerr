@@ -252,6 +252,15 @@ startup, before the first check cycle completes) renders as "Checking..." rather
 online/offline, since neither would be true yet. The status badge itself (`StatusBadge`, `packages/ui`) is
 presentational only — online/offline/checking plus a label — consistent with the low-level-component rule.
 
+**Rules** (`/rules`, root-level nav, first added as an empty-state shell) is a library cleanup automation
+feature, built incrementally: the `Rule` entity (`backend/ent/schema/rule.go`) deliberately only has
+`name`/`enabled` for now — no condition, action, or library-scope fields yet, since those depend on an
+execution engine that doesn't exist yet and guessing that shape before it does would likely need reworking.
+Full CRUD (`backend/internal/api/rules.go`, `GET/POST /api/rules`, `PUT/DELETE /api/rules/{id}`) exists even
+though nothing executes a rule yet, matching how `Connection` CRUD existed before Plex/Radarr/Sonarr/Seerr
+did anything useful with it. Unlike `Connection`, `Rule` has a `DELETE` endpoint — connections never gained
+one since it was never asked for, not because of some rule against it.
+
 ## Logging
 
 Built on the stdlib `log/slog` — no logging dependency. `backend/internal/logging.New()` builds the logger
