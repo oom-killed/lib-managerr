@@ -150,6 +150,9 @@ library section's media items, via `backend/internal/plex.ListLibraryItems` →
 `/library/sections/{key}/all?X-Plex-Container-Start=...&X-Plex-Container-Size=...` — Plex's own pagination
 query-param convention. Response is `{items, total, offset, limit}`; the frontend derives Prev/Next
 enabled-state and the "X–Y of N" range purely from `total`/`offset`/`limit`, no separate page-count field.
+For `show`-type items, Plex's `childCount`/`leafCount` fields (season count / episode count) come back on the
+same `/library/sections/{key}/all` response already used for the item list — no extra request — mapped to
+`Item.SeasonCount`/`EpisodeCount`, shown in the UI only when `type === "show"`.
 
 **Adding a new connection type without heavy refactoring**: the `Connection` entity's fields (`type`, `name`,
 `host`, `port`, `ssl`, `token`) are deliberately generic across host-based server integrations, not

@@ -151,6 +151,19 @@ function Libraries() {
 													({item.year})
 												</span>
 											</Show>
+											<Show
+												when={
+													item.type === "show" &&
+													(item.seasonCount || item.episodeCount)
+												}
+											>
+												<div class="text-sm text-neutral-500 dark:text-neutral-400">
+													{t("libraries.showMeta", {
+														seasons: item.seasonCount ?? 0,
+														episodes: item.episodeCount ?? 0,
+													})}
+												</div>
+											</Show>
 										</li>
 									)}
 								</For>

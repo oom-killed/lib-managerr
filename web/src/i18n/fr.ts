@@ -33,6 +33,7 @@ export const dict: Dict = {
 		itemsLoadError: "Échec du chargement des éléments de cette bibliothèque.",
 		noItems: "Aucun élément dans cette bibliothèque.",
 		pageRange: "{{start}}–{{end}} sur {{total}}",
+		showMeta: "{{seasons}} saisons, {{episodes}} épisodes",
 	},
 	settings: {
 		general: {

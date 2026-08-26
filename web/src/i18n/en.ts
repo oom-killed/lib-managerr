@@ -30,6 +30,7 @@ export type Dict = {
 		itemsLoadError: string;
 		noItems: string;
 		pageRange: string;
+		showMeta: string;
 	};
 	settings: {
 		general: {
@@ -91,6 +92,7 @@ export const dict: Dict = {
 		itemsLoadError: "Failed to load items from this library.",
 		noItems: "No items in this library.",
 		pageRange: "{{start}}–{{end}} of {{total}}",
+		showMeta: "{{seasons}} seasons, {{episodes}} episodes",
 	},
 	settings: {
 		general: {

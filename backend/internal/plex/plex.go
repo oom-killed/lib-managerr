@@ -101,10 +101,12 @@ func ListLibraries(ctx context.Context, cfg Config) ([]Library, error) {
 
 // Item is one piece of media (a movie, a show, ...) within a library section.
 type Item struct {
-	Key   string `json:"key"`
-	Title string `json:"title"`
-	Year  int    `json:"year,omitempty"`
-	Type  string `json:"type"`
+	Key          string `json:"key"`
+	Title        string `json:"title"`
+	Year         int    `json:"year,omitempty"`
+	Type         string `json:"type"`
+	SeasonCount  int    `json:"seasonCount,omitempty"`  // shows only
+	EpisodeCount int    `json:"episodeCount,omitempty"` // shows only
 }
 
 type libraryItemsResponse struct {
@@ -115,6 +117,10 @@ type libraryItemsResponse struct {
 			Title     string `json:"title"`
 			Year      int    `json:"year"`
 			Type      string `json:"type"`
+			// Plex includes these on "show" items in a section listing:
+			// childCount is the season count, leafCount the episode count.
+			ChildCount int `json:"childCount"`
+			LeafCount  int `json:"leafCount"`
 		} `json:"Metadata"`
 	} `json:"MediaContainer"`
 }
@@ -141,7 +147,14 @@ func ListLibraryItems(ctx context.Context, cfg Config, sectionKey string, offset
 
 	items := make([]Item, 0, len(parsed.MediaContainer.Metadata))
 	for _, m := range parsed.MediaContainer.Metadata {
-		items = append(items, Item{Key: m.RatingKey, Title: m.Title, Year: m.Year, Type: m.Type})
+		items = append(items, Item{
+			Key:          m.RatingKey,
+			Title:        m.Title,
+			Year:         m.Year,
+			Type:         m.Type,
+			SeasonCount:  m.ChildCount,
+			EpisodeCount: m.LeafCount,
+		})
 	}
 	return items, parsed.MediaContainer.TotalSize, nil
 }

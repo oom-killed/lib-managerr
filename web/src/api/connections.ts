@@ -123,6 +123,8 @@ export type LibraryItem = {
 	title: string;
 	year?: number;
 	type: string;
+	seasonCount?: number;
+	episodeCount?: number;
 };
 
 export type LibraryItemsPage = {
