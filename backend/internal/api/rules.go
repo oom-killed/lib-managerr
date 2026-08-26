@@ -3,7 +3,9 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"encoding/json/jsontext"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -12,6 +14,61 @@ import (
 	"github.com/oom-killed/lib-managerr/ent/ruleactionstep"
 	"github.com/oom-killed/lib-managerr/internal/logging"
 )
+
+// criteriaNode is the shape validated on write. The field vocabulary a
+// condition's "field"/"operator" can reference isn't enforced here — that
+// registry lives in the frontend (ruleCriteria.ts) only, since there's no
+// execution engine yet to be strict about it against.
+type criteriaNode struct {
+	Type     string          `json:"type"`
+	Operator string          `json:"operator"`
+	Children []criteriaNode  `json:"children"`
+	Field    string          `json:"field"`
+	Value    json.RawMessage `json:"value"`
+}
+
+// validateCriteria checks the basic group/condition tree shape (e.g. a
+// group has AND/OR plus at least one child, a condition has a field and
+// operator) without validating field/operator values against any
+// vocabulary. An empty/absent blob is valid — it just means no criteria.
+func validateCriteria(raw jsontext.Value) error {
+	if len(raw) == 0 {
+		return nil
+	}
+	var node criteriaNode
+	if err := json.Unmarshal(raw, &node); err != nil {
+		return fmt.Errorf("invalid criteria: %w", err)
+	}
+	return validateCriteriaNode(node)
+}
+
+func validateCriteriaNode(n criteriaNode) error {
+	switch n.Type {
+	case "group":
+		if n.Operator != "AND" && n.Operator != "OR" {
+			return fmt.Errorf("group node requires operator AND or OR")
+		}
+		if len(n.Children) == 0 {
+			return fmt.Errorf("group node requires at least one child")
+		}
+		for _, c := range n.Children {
+			if err := validateCriteriaNode(c); err != nil {
+				return err
+			}
+		}
+		return nil
+	case "condition":
+		if n.Field == "" {
+			return fmt.Errorf("condition node requires a field")
+		}
+		if n.Operator == "" {
+			return fmt.Errorf("condition node requires an operator")
+		}
+		return nil
+	default:
+		return fmt.Errorf("unknown criteria node type %q", n.Type)
+	}
+}
 
 type ruleActionStepInput struct {
 	DelayAmount int                      `json:"delayAmount"`
@@ -26,6 +83,7 @@ type ruleInput struct {
 	LibraryKey   string                `json:"libraryKey"`
 	Granularity  *rule.Granularity     `json:"granularity"`
 	Actions      []ruleActionStepInput `json:"actions"`
+	Criteria     jsontext.Value        `json:"criteria"`
 }
 
 type ruleActionStepOut struct {
@@ -104,6 +162,10 @@ func RegisterRuleRoutes(mux *http.ServeMux, client *ent.Client) {
 			http.Error(w, "invalid request body", http.StatusBadRequest)
 			return
 		}
+		if err := validateCriteria(in.Criteria); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 
 		create := client.Rule.Create().
 			SetName(in.Name).
@@ -112,6 +174,9 @@ func RegisterRuleRoutes(mux *http.ServeMux, client *ent.Client) {
 			SetLibraryKey(in.LibraryKey)
 		if in.Granularity != nil {
 			create = create.SetGranularity(*in.Granularity)
+		}
+		if len(in.Criteria) > 0 {
+			create = create.SetCriteria(in.Criteria)
 		}
 		created, err := create.Save(r.Context())
 		if err != nil {
@@ -146,6 +211,10 @@ func RegisterRuleRoutes(mux *http.ServeMux, client *ent.Client) {
 			http.Error(w, "invalid request body", http.StatusBadRequest)
 			return
 		}
+		if err := validateCriteria(in.Criteria); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 
 		update := client.Rule.UpdateOneID(id).
 			SetName(in.Name).
@@ -161,6 +230,15 @@ func RegisterRuleRoutes(mux *http.ServeMux, client *ent.Client) {
 			update = update.SetGranularity(*in.Granularity)
 		} else {
 			update = update.ClearGranularity()
+		}
+		// Same reasoning as Granularity: the form always submits the
+		// complete current criteria tree (or none), so an empty/absent
+		// value means "no criteria" and must actively clear any previous
+		// tree, not leave a stale one in place.
+		if len(in.Criteria) > 0 {
+			update = update.SetCriteria(in.Criteria)
+		} else {
+			update = update.ClearCriteria()
 		}
 		updated, err := update.Save(r.Context())
 		if err != nil {

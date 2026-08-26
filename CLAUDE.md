@@ -341,6 +341,34 @@ existing `mediaTypes`, and `ruleActionOptionsFor` takes a second `granularity` p
 re-filters and resets any step whose action no longer applies, the same reactive pattern already used for
 media-type changes.
 
+**`Rule.criteria`** (added next) is a nested AND/OR condition tree — e.g. `(A AND B) OR (C AND D)` — for
+deciding *which* items a rule applies to, complementing the action_steps that decide what happens and when.
+Stored as a single opaque JSON blob (`field.JSON("criteria", json.RawMessage{})`, generated as ent's
+`jsontext.Value`) rather than normalized recursive entities — a deliberate simplicity tradeoff: the
+field/operator vocabulary a condition can reference lives only in the frontend registry
+(`web/src/routes/rules/ruleCriteria.ts`), not enforced by the backend at all, so extending it never touches
+the schema. The backend validates only the tree's *shape* (`validateCriteria`/`validateCriteriaNode` in
+`internal/api/rules.go`): every node is either a `"group"` (requires `operator` = `"AND"`/`"OR"` and at
+least one child) or a `"condition"` (requires non-empty `field`/`operator`); an empty or absent blob means
+"no criteria" and is valid. Same omit-clears-it semantics as `granularity` on `PUT` — the form always
+submits its complete current tree (or nothing), so an absent value must actively clear any previous one
+rather than leave it unchanged, unlike `action`'s "omit means untouched" convention.
+
+The criteria field registry currently covers Plex (added date, last-watched date, view count, release year —
+available on any library), Radarr (monitored, quality profile — movie libraries only), and Sonarr (monitored,
+quality profile, season/episode counts — show libraries only), mirroring Maintainerr's own criteria
+categories as a starting vocabulary rather than a verified port of its exact field list. `CriteriaField`
+entries declare a `valueKind` (`date`/`number`/`boolean`) and their own operator list, plus an optional
+`mediaTypes` restriction using the same filtering shape as `ruleActions.ts`'s `mediaTypes`/`granularities`.
+
+The nested-group UI (`web/src/routes/rules/CriteriaGroupEditor.tsx`) is genuinely recursive — a group renders
+its own AND/OR toggle plus a list of children that are each either a condition row or another
+`CriteriaGroupEditor`, so `(A AND B) OR (C AND D)` is just a depth-2 tree of the same component. Removing a
+group/condition's last remaining child calls that group's own `onRemove` rather than leaving an
+empty-children group behind (which the backend would reject); at the root, `RuleForm.tsx` wires `onRemove` to
+clear the whole criteria signal back to `undefined`, unifying "remove the last child" and "remove all
+criteria" into the same code path instead of special-casing the root group.
+
 ## Logging
 
 Built on the stdlib `log/slog` — no logging dependency. `backend/internal/logging.New()` builds the logger

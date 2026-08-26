@@ -29,6 +29,8 @@ const (
 	FieldLibraryKey = "library_key"
 	// FieldGranularity holds the string denoting the granularity field in the database.
 	FieldGranularity = "granularity"
+	// FieldCriteria holds the string denoting the criteria field in the database.
+	FieldCriteria = "criteria"
 	// EdgeConnection holds the string denoting the connection edge name in mutations.
 	EdgeConnection = "connection"
 	// EdgeActionSteps holds the string denoting the action_steps edge name in mutations.
@@ -61,6 +63,7 @@ var Columns = []string{
 	FieldConnectionID,
 	FieldLibraryKey,
 	FieldGranularity,
+	FieldCriteria,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).

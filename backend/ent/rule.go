@@ -3,6 +3,8 @@
 package ent
 
 import (
+	"encoding/json"
+	"encoding/json/jsontext"
 	"fmt"
 	"strings"
 	"time"
@@ -32,6 +34,8 @@ type Rule struct {
 	LibraryKey string `json:"libraryKey,omitempty"`
 	// Granularity holds the value of the "granularity" field.
 	Granularity *rule.Granularity `json:"granularity,omitempty"`
+	// Criteria holds the value of the "criteria" field.
+	Criteria jsontext.Value `json:"criteria,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the RuleQuery when eager-loading is set.
 	Edges        RuleEdges `json:"edges"`
@@ -74,6 +78,8 @@ func (*Rule) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case rule.FieldCriteria:
+			values[i] = new([]byte)
 		case rule.FieldEnabled:
 			values[i] = new(sql.NullBool)
 		case rule.FieldID, rule.FieldConnectionID:
@@ -146,6 +152,14 @@ func (_m *Rule) assignValues(columns []string, values []any) error {
 				_m.Granularity = new(rule.Granularity)
 				*_m.Granularity = rule.Granularity(value.String)
 			}
+		case rule.FieldCriteria:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field criteria", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.Criteria); err != nil {
+					return fmt.Errorf("unmarshal field criteria: %w", err)
+				}
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -214,6 +228,9 @@ func (_m *Rule) String() string {
 		builder.WriteString("granularity=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("criteria=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Criteria))
 	builder.WriteByte(')')
 	return builder.String()
 }

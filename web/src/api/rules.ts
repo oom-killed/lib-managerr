@@ -35,6 +35,27 @@ export type RuleActionStep = {
 	action: RuleAction;
 };
 
+// A condition leaf, e.g. { field: "plex.addedDate", operator: "olderThanDays", value: 30 }.
+// The field/operator vocabulary lives in ruleCriteria.ts, not here — the
+// backend only validates the tree shape, not these values.
+export type RuleCriteriaCondition = {
+	type: "condition";
+	field: string;
+	operator: string;
+	value?: string | number | boolean;
+};
+
+// A group node — e.g. (A AND B) OR (C AND D) is a "group" with operator
+// "OR" whose two children are themselves "group" nodes with operator
+// "AND", each containing condition leaves.
+export type RuleCriteriaGroup = {
+	type: "group";
+	operator: "AND" | "OR";
+	children: RuleCriteriaNode[];
+};
+
+export type RuleCriteriaNode = RuleCriteriaGroup | RuleCriteriaCondition;
+
 export type Rule = {
 	id: number;
 	name: string;
@@ -46,6 +67,10 @@ export type Rule = {
 	connectionId: number;
 	libraryKey: string;
 	granularity?: RuleGranularity;
+	// Absent means "no criteria configured" — always a group node at the
+	// root, even if it has just one child, so the UI always has an AND/OR
+	// toggle to work with.
+	criteria?: RuleCriteriaGroup;
 };
 
 export type RuleInput = {
@@ -55,6 +80,7 @@ export type RuleInput = {
 	connectionId: number;
 	libraryKey: string;
 	granularity?: RuleGranularity;
+	criteria?: RuleCriteriaGroup;
 };
 
 export async function fetchRules(): Promise<Rule[]> {

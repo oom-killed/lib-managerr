@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"encoding/json/jsontext"
 	"errors"
 	"fmt"
 	"time"
@@ -93,6 +94,12 @@ func (_c *RuleCreate) SetNillableGranularity(v *rule.Granularity) *RuleCreate {
 	if v != nil {
 		_c.SetGranularity(*v)
 	}
+	return _c
+}
+
+// SetCriteria sets the "criteria" field.
+func (_c *RuleCreate) SetCriteria(v jsontext.Value) *RuleCreate {
+	_c.mutation.SetCriteria(v)
 	return _c
 }
 
@@ -252,6 +259,10 @@ func (_c *RuleCreate) createSpec() (*Rule, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Granularity(); ok {
 		_spec.SetField(rule.FieldGranularity, field.TypeEnum, value)
 		_node.Granularity = &value
+	}
+	if value, ok := _c.mutation.Criteria(); ok {
+		_spec.SetField(rule.FieldCriteria, field.TypeJSON, value)
+		_node.Criteria = value
 	}
 	if nodes := _c.mutation.ConnectionIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

@@ -67,6 +67,7 @@ var (
 		{Name: "enabled", Type: field.TypeBool, Default: true},
 		{Name: "library_key", Type: field.TypeString},
 		{Name: "granularity", Type: field.TypeEnum, Nullable: true, Enums: []string{"show", "season", "episode"}},
+		{Name: "criteria", Type: field.TypeJSON, Nullable: true},
 		{Name: "connection_id", Type: field.TypeInt},
 	}
 	// RulesTable holds the schema information for the "rules" table.
@@ -77,7 +78,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "rules_connections_rules",
-				Columns:    []*schema.Column{RulesColumns[7]},
+				Columns:    []*schema.Column{RulesColumns[8]},
 				RefColumns: []*schema.Column{ConnectionsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},

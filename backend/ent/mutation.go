@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"encoding/json/jsontext"
 	"errors"
 	"fmt"
 	"sync"
@@ -1624,6 +1625,8 @@ type RuleMutation struct {
 	enabled             *bool
 	library_key         *string
 	granularity         *rule.Granularity
+	criteria            *jsontext.Value
+	appendcriteria      jsontext.Value
 	clearedFields       map[string]struct{}
 	connection          *int
 	clearedconnection   bool
@@ -1998,6 +2001,71 @@ func (m *RuleMutation) ResetGranularity() {
 	delete(m.clearedFields, rule.FieldGranularity)
 }
 
+// SetCriteria sets the "criteria" field.
+func (m *RuleMutation) SetCriteria(j jsontext.Value) {
+	m.criteria = &j
+	m.appendcriteria = nil
+}
+
+// Criteria returns the value of the "criteria" field in the mutation.
+func (m *RuleMutation) Criteria() (r jsontext.Value, exists bool) {
+	v := m.criteria
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCriteria returns the old "criteria" field's value of the Rule entity.
+// If the Rule object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RuleMutation) OldCriteria(ctx context.Context) (v jsontext.Value, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCriteria is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCriteria requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCriteria: %w", err)
+	}
+	return oldValue.Criteria, nil
+}
+
+// AppendCriteria adds j to the "criteria" field.
+func (m *RuleMutation) AppendCriteria(j jsontext.Value) {
+	m.appendcriteria = append(m.appendcriteria, j...)
+}
+
+// AppendedCriteria returns the list of values that were appended to the "criteria" field in this mutation.
+func (m *RuleMutation) AppendedCriteria() (jsontext.Value, bool) {
+	if len(m.appendcriteria) == 0 {
+		return nil, false
+	}
+	return m.appendcriteria, true
+}
+
+// ClearCriteria clears the value of the "criteria" field.
+func (m *RuleMutation) ClearCriteria() {
+	m.criteria = nil
+	m.appendcriteria = nil
+	m.clearedFields[rule.FieldCriteria] = struct{}{}
+}
+
+// CriteriaCleared returns if the "criteria" field was cleared in this mutation.
+func (m *RuleMutation) CriteriaCleared() bool {
+	_, ok := m.clearedFields[rule.FieldCriteria]
+	return ok
+}
+
+// ResetCriteria resets all changes to the "criteria" field.
+func (m *RuleMutation) ResetCriteria() {
+	m.criteria = nil
+	m.appendcriteria = nil
+	delete(m.clearedFields, rule.FieldCriteria)
+}
+
 // ClearConnection clears the "connection" edge to the Connection entity.
 func (m *RuleMutation) ClearConnection() {
 	m.clearedconnection = true
@@ -2113,7 +2181,7 @@ func (m *RuleMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *RuleMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 8)
 	if m.created_at != nil {
 		fields = append(fields, rule.FieldCreatedAt)
 	}
@@ -2134,6 +2202,9 @@ func (m *RuleMutation) Fields() []string {
 	}
 	if m.granularity != nil {
 		fields = append(fields, rule.FieldGranularity)
+	}
+	if m.criteria != nil {
+		fields = append(fields, rule.FieldCriteria)
 	}
 	return fields
 }
@@ -2157,6 +2228,8 @@ func (m *RuleMutation) Field(name string) (ent.Value, bool) {
 		return m.LibraryKey()
 	case rule.FieldGranularity:
 		return m.Granularity()
+	case rule.FieldCriteria:
+		return m.Criteria()
 	}
 	return nil, false
 }
@@ -2180,6 +2253,8 @@ func (m *RuleMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldLibraryKey(ctx)
 	case rule.FieldGranularity:
 		return m.OldGranularity(ctx)
+	case rule.FieldCriteria:
+		return m.OldCriteria(ctx)
 	}
 	return nil, fmt.Errorf("unknown Rule field %s", name)
 }
@@ -2238,6 +2313,13 @@ func (m *RuleMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetGranularity(v)
 		return nil
+	case rule.FieldCriteria:
+		v, ok := value.(jsontext.Value)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCriteria(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Rule field %s", name)
 }
@@ -2274,6 +2356,9 @@ func (m *RuleMutation) ClearedFields() []string {
 	if m.FieldCleared(rule.FieldGranularity) {
 		fields = append(fields, rule.FieldGranularity)
 	}
+	if m.FieldCleared(rule.FieldCriteria) {
+		fields = append(fields, rule.FieldCriteria)
+	}
 	return fields
 }
 
@@ -2290,6 +2375,9 @@ func (m *RuleMutation) ClearField(name string) error {
 	switch name {
 	case rule.FieldGranularity:
 		m.ClearGranularity()
+		return nil
+	case rule.FieldCriteria:
+		m.ClearCriteria()
 		return nil
 	}
 	return fmt.Errorf("unknown Rule nullable field %s", name)
@@ -2319,6 +2407,9 @@ func (m *RuleMutation) ResetField(name string) error {
 		return nil
 	case rule.FieldGranularity:
 		m.ResetGranularity()
+		return nil
+	case rule.FieldCriteria:
+		m.ResetCriteria()
 		return nil
 	}
 	return fmt.Errorf("unknown Rule field %s", name)

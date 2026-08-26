@@ -15,11 +15,13 @@ import {
 import type {
 	Rule,
 	RuleActionStep,
+	RuleCriteriaGroup,
 	RuleDelayUnit,
 	RuleGranularity,
 	RuleInput,
 } from "../../api/rules.ts";
 import { useI18n } from "../../i18n/index.tsx";
+import { CriteriaGroupEditor, defaultGroup } from "./CriteriaGroupEditor.tsx";
 import { ruleActionOptionsFor } from "./ruleActions.ts";
 
 export type RuleFormMode = "add" | "edit";
@@ -55,6 +57,9 @@ export function RuleForm(props: RuleFormProps) {
 	const [granularity, setGranularity] = createSignal<
 		RuleGranularity | undefined
 	>(props.rule?.granularity);
+	const [criteria, setCriteria] = createSignal<RuleCriteriaGroup | undefined>(
+		props.rule?.criteria,
+	);
 	const [submitting, setSubmitting] = createSignal(false);
 
 	const [connections] = createResource(fetchConnections);
@@ -174,6 +179,7 @@ export function RuleForm(props: RuleFormProps) {
 				// biome-ignore lint/style/noNonNullAssertion: guarded by canSave()
 				libraryKey: libraryKey()!,
 				granularity: granularity(),
+				criteria: criteria(),
 			});
 		} finally {
 			setSubmitting(false);
@@ -327,6 +333,35 @@ export function RuleForm(props: RuleFormProps) {
 				<Button type="button" variant="secondary" onClick={addStep}>
 					{t("rules.addAction")}
 				</Button>
+			</div>
+
+			<div class="flex flex-col gap-2">
+				<span class="text-sm text-neutral-700 dark:text-neutral-300">
+					{t("rules.fields.criteria")}
+				</span>
+				<Show
+					when={criteria()}
+					fallback={
+						<Button
+							type="button"
+							variant="secondary"
+							onClick={() =>
+								setCriteria(defaultGroup(selectedLibraryMediaType()))
+							}
+						>
+							{t("rules.addCriteria")}
+						</Button>
+					}
+				>
+					{(group) => (
+						<CriteriaGroupEditor
+							group={group()}
+							mediaType={selectedLibraryMediaType()}
+							onChange={setCriteria}
+							onRemove={() => setCriteria(undefined)}
+						/>
+					)}
+				</Show>
 			</div>
 
 			<div class="mt-2 flex justify-end gap-2">

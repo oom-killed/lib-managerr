@@ -4,12 +4,14 @@ package ent
 
 import (
 	"context"
+	"encoding/json/jsontext"
 	"errors"
 	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/oom-killed/lib-managerr/ent/connection"
 	"github.com/oom-killed/lib-managerr/ent/predicate"
@@ -109,6 +111,24 @@ func (_u *RuleUpdate) SetNillableGranularity(v *rule.Granularity) *RuleUpdate {
 // ClearGranularity clears the value of the "granularity" field.
 func (_u *RuleUpdate) ClearGranularity() *RuleUpdate {
 	_u.mutation.ClearGranularity()
+	return _u
+}
+
+// SetCriteria sets the "criteria" field.
+func (_u *RuleUpdate) SetCriteria(v jsontext.Value) *RuleUpdate {
+	_u.mutation.SetCriteria(v)
+	return _u
+}
+
+// AppendCriteria appends value to the "criteria" field.
+func (_u *RuleUpdate) AppendCriteria(v jsontext.Value) *RuleUpdate {
+	_u.mutation.AppendCriteria(v)
+	return _u
+}
+
+// ClearCriteria clears the value of the "criteria" field.
+func (_u *RuleUpdate) ClearCriteria() *RuleUpdate {
+	_u.mutation.ClearCriteria()
 	return _u
 }
 
@@ -252,6 +272,17 @@ func (_u *RuleUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.GranularityCleared() {
 		_spec.ClearField(rule.FieldGranularity, field.TypeEnum)
+	}
+	if value, ok := _u.mutation.Criteria(); ok {
+		_spec.SetField(rule.FieldCriteria, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedCriteria(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, rule.FieldCriteria, value)
+		})
+	}
+	if _u.mutation.CriteriaCleared() {
+		_spec.ClearField(rule.FieldCriteria, field.TypeJSON)
 	}
 	if _u.mutation.ConnectionCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -429,6 +460,24 @@ func (_u *RuleUpdateOne) ClearGranularity() *RuleUpdateOne {
 	return _u
 }
 
+// SetCriteria sets the "criteria" field.
+func (_u *RuleUpdateOne) SetCriteria(v jsontext.Value) *RuleUpdateOne {
+	_u.mutation.SetCriteria(v)
+	return _u
+}
+
+// AppendCriteria appends value to the "criteria" field.
+func (_u *RuleUpdateOne) AppendCriteria(v jsontext.Value) *RuleUpdateOne {
+	_u.mutation.AppendCriteria(v)
+	return _u
+}
+
+// ClearCriteria clears the value of the "criteria" field.
+func (_u *RuleUpdateOne) ClearCriteria() *RuleUpdateOne {
+	_u.mutation.ClearCriteria()
+	return _u
+}
+
 // SetConnection sets the "connection" edge to the Connection entity.
 func (_u *RuleUpdateOne) SetConnection(v *Connection) *RuleUpdateOne {
 	return _u.SetConnectionID(v.ID)
@@ -599,6 +648,17 @@ func (_u *RuleUpdateOne) sqlSave(ctx context.Context) (_node *Rule, err error) {
 	}
 	if _u.mutation.GranularityCleared() {
 		_spec.ClearField(rule.FieldGranularity, field.TypeEnum)
+	}
+	if value, ok := _u.mutation.Criteria(); ok {
+		_spec.SetField(rule.FieldCriteria, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedCriteria(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, rule.FieldCriteria, value)
+		})
+	}
+	if _u.mutation.CriteriaCleared() {
+		_spec.ClearField(rule.FieldCriteria, field.TypeJSON)
 	}
 	if _u.mutation.ConnectionCleared() {
 		edge := &sqlgraph.EdgeSpec{

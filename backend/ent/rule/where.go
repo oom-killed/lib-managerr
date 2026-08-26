@@ -355,6 +355,16 @@ func GranularityNotNil() predicate.Rule {
 	return predicate.Rule(sql.FieldNotNull(FieldGranularity))
 }
 
+// CriteriaIsNil applies the IsNil predicate on the "criteria" field.
+func CriteriaIsNil() predicate.Rule {
+	return predicate.Rule(sql.FieldIsNull(FieldCriteria))
+}
+
+// CriteriaNotNil applies the NotNil predicate on the "criteria" field.
+func CriteriaNotNil() predicate.Rule {
+	return predicate.Rule(sql.FieldNotNull(FieldCriteria))
+}
+
 // HasConnection applies the HasEdge predicate on the "connection" edge.
 func HasConnection() predicate.Rule {
 	return predicate.Rule(func(s *sql.Selector) {

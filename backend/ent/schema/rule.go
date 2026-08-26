@@ -1,17 +1,19 @@
 package schema
 
 import (
+	"encoding/json"
+
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 )
 
-// Rule is a library cleanup automation rule. Condition fields (beyond the
-// library it targets) are still a later increment, once there's an
-// execution engine to define what a rule actually needs to evaluate — its
-// ordered action_steps are modeled now so a rule can at least declare
-// what it would do, and when.
+// Rule is a library cleanup automation rule: it targets a library, has an
+// ordered list of action_steps declaring what it does and when, and a
+// criteria tree (a nested AND/OR condition tree) declaring what it
+// applies to. An execution engine to actually evaluate criteria and run
+// actions is still a later increment.
 type Rule struct {
 	ent.Schema
 }
@@ -45,6 +47,14 @@ func (Rule) Fields() []ent.Field {
 			Values("show", "season", "episode").
 			Optional().
 			Nillable(),
+		// A nested AND/OR condition tree — e.g. (A AND B) OR (C AND D) —
+		// stored as an opaque JSON blob rather than normalized entities,
+		// since the field vocabulary a condition can reference lives only
+		// in the frontend registry (ruleCriteria.ts) for now, not enforced
+		// by an enum here. Basic tree shape (group/condition node
+		// structure) is validated in the API layer, not by ent itself.
+		field.JSON("criteria", json.RawMessage{}).
+			Optional(),
 	}
 }
 

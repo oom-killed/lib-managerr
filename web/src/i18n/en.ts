@@ -6,6 +6,8 @@ export type Dict = {
 		previous: string;
 		next: string;
 		delete: string;
+		yes: string;
+		no: string;
 	};
 	nav: {
 		dashboard: string;
@@ -55,6 +57,9 @@ export type Dict = {
 		disabledLabel: string;
 		noActions: string;
 		addAction: string;
+		addCriteria: string;
+		addCondition: string;
+		addGroup: string;
 		fields: {
 			name: string;
 			enabled: string;
@@ -65,6 +70,39 @@ export type Dict = {
 			actions: string;
 			delayAmount: string;
 			delayUnit: string;
+			criteria: string;
+			criteriaField: string;
+			criteriaOperator: string;
+			criteriaValue: string;
+		};
+		criteriaOperatorLogic: {
+			and: string;
+			or: string;
+		};
+		criteriaFields: {
+			plexAddedDate: string;
+			plexLastWatchedDate: string;
+			plexViewCount: string;
+			plexReleaseYear: string;
+			radarrMonitored: string;
+			radarrQualityProfile: string;
+			sonarrMonitored: string;
+			sonarrQualityProfile: string;
+			sonarrSeasonCount: string;
+			sonarrEpisodeCount: string;
+		};
+		criteriaOperators: {
+			before: string;
+			after: string;
+			olderThanDays: string;
+			newerThanDays: string;
+			neverWatched: string;
+			equals: string;
+			notEquals: string;
+			greaterThan: string;
+			lessThan: string;
+			is: string;
+			isNot: string;
 		};
 		actions: {
 			changeQualityAndSearch: string;
@@ -132,6 +170,8 @@ export const dict: Dict = {
 		previous: "Previous",
 		next: "Next",
 		delete: "Delete",
+		yes: "Yes",
+		no: "No",
 	},
 	nav: {
 		dashboard: "Dashboard",
@@ -183,6 +223,9 @@ export const dict: Dict = {
 		disabledLabel: "Disabled",
 		noActions: "No actions",
 		addAction: "Add Action",
+		addCriteria: "Add Criteria",
+		addCondition: "Add Condition",
+		addGroup: "Add Group",
 		fields: {
 			name: "Name",
 			enabled: "Enabled",
@@ -193,6 +236,39 @@ export const dict: Dict = {
 			actions: "Actions",
 			delayAmount: "Delay",
 			delayUnit: "Unit",
+			criteria: "Criteria",
+			criteriaField: "Field",
+			criteriaOperator: "Operator",
+			criteriaValue: "Value",
+		},
+		criteriaOperatorLogic: {
+			and: "AND",
+			or: "OR",
+		},
+		criteriaFields: {
+			plexAddedDate: "Added date",
+			plexLastWatchedDate: "Last watched date",
+			plexViewCount: "View count",
+			plexReleaseYear: "Release year",
+			radarrMonitored: "Monitored (Radarr)",
+			radarrQualityProfile: "Quality profile (Radarr)",
+			sonarrMonitored: "Monitored (Sonarr)",
+			sonarrQualityProfile: "Quality profile (Sonarr)",
+			sonarrSeasonCount: "Season count",
+			sonarrEpisodeCount: "Episode count",
+		},
+		criteriaOperators: {
+			before: "before",
+			after: "after",
+			olderThanDays: "older than (days)",
+			newerThanDays: "newer than (days)",
+			neverWatched: "never watched",
+			equals: "equals",
+			notEquals: "does not equal",
+			greaterThan: "greater than",
+			lessThan: "less than",
+			is: "is",
+			isNot: "is not",
 		},
 		actions: {
 			changeQualityAndSearch: "Change quality profile and search",
