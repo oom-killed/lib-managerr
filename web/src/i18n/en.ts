@@ -9,6 +9,7 @@ export type Dict = {
 	nav: {
 		dashboard: string;
 		libraries: string;
+		rules: string;
 		settings: string;
 	};
 	settingsNav: {
@@ -42,6 +43,10 @@ export type Dict = {
 		sonarrMonitored: string;
 		sonarrUnmonitored: string;
 		sonarrNotTracked: string;
+	};
+	rules: {
+		title: string;
+		empty: string;
 	};
 	settings: {
 		general: {
@@ -82,6 +87,7 @@ export const dict: Dict = {
 	nav: {
 		dashboard: "Dashboard",
 		libraries: "Libraries",
+		rules: "Rules",
 		settings: "Settings",
 	},
 	settingsNav: {
@@ -117,6 +123,10 @@ export const dict: Dict = {
 		sonarrMonitored: "Monitored",
 		sonarrUnmonitored: "Unmonitored",
 		sonarrNotTracked: "Not tracked in Sonarr",
+	},
+	rules: {
+		title: "Rules",
+		empty: "No rules configured yet.",
 	},
 	settings: {
 		general: {

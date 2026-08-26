@@ -25,6 +25,12 @@ export function AppShell(props: { children?: JSX.Element }) {
 						label={t("nav.libraries")}
 						isActive={isActive("/libraries")}
 					/>
+					<NavLink
+						as={A}
+						href="/rules"
+						label={t("nav.rules")}
+						isActive={isActive("/rules")}
+					/>
 					<NavGroup label={t("nav.settings")}>
 						<NavLink
 							as={A}

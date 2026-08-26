@@ -11,6 +11,7 @@ export const dict: Dict = {
 	nav: {
 		dashboard: "Tableau de bord",
 		libraries: "Bibliothèques",
+		rules: "Règles",
 		settings: "Paramètres",
 	},
 	settingsNav: {
@@ -46,6 +47,10 @@ export const dict: Dict = {
 		sonarrMonitored: "Surveillé",
 		sonarrUnmonitored: "Non surveillé",
 		sonarrNotTracked: "Absent de Sonarr",
+	},
+	rules: {
+		title: "Règles",
+		empty: "Aucune règle configurée pour le moment.",
 	},
 	settings: {
 		general: {
