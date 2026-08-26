@@ -151,7 +151,7 @@ export function ConnectionForm(props: ConnectionFormProps) {
 								required={field.key === "token" ? isAdd() : true}
 								placeholder={
 									field.key === "token" && !isAdd()
-										? t("settings.libraries.tokenEditHint")
+										? t("settings.connections.tokenEditHint")
 										: undefined
 								}
 								onChange={(value) => {
@@ -182,8 +182,8 @@ export function ConnectionForm(props: ConnectionFormProps) {
 					onClick={handleTest}
 				>
 					{testing()
-						? t("settings.libraries.testing")
-						: t("settings.libraries.testButton")}
+						? t("settings.connections.testing")
+						: t("settings.connections.testButton")}
 				</Button>
 				<Show when={testResult()}>
 					{(result) => (
@@ -195,8 +195,8 @@ export function ConnectionForm(props: ConnectionFormProps) {
 							}}
 						>
 							{result().ok
-								? t("settings.libraries.testSuccess")
-								: t("settings.libraries.testFailure", {
+								? t("settings.connections.testSuccess")
+								: t("settings.connections.testFailure", {
 										error: result().error ?? "",
 									})}
 						</span>

@@ -7,14 +7,14 @@ import {
 	updateConnection,
 } from "../../api/connections.ts";
 import { useI18n } from "../../i18n/index.tsx";
-import { ConnectionForm } from "./libraries/ConnectionForm.tsx";
+import { ConnectionForm } from "./connections/ConnectionForm.tsx";
 
 type ModalState =
 	| { mode: "add" }
 	| { mode: "edit"; connection: Connection }
 	| null;
 
-function Libraries() {
+function Connections() {
 	const { t } = useI18n();
 	const [connections, { refetch }] = createResource(fetchConnections);
 	const [modal, setModal] = createSignal<ModalState>(null);
@@ -37,15 +37,15 @@ function Libraries() {
 	return (
 		<section>
 			<div class="flex items-center justify-between">
-				<h1>{t("settings.libraries.title")}</h1>
+				<h1>{t("settings.connections.title")}</h1>
 				<Button onClick={() => setModal({ mode: "add" })}>
-					{t("settings.libraries.addButton")}
+					{t("settings.connections.addButton")}
 				</Button>
 			</div>
 
 			<Show
 				when={(connections()?.length ?? 0) > 0}
-				fallback={<p class="mt-4">{t("settings.libraries.empty")}</p>}
+				fallback={<p class="mt-4">{t("settings.connections.empty")}</p>}
 			>
 				<ul class="mt-4 flex flex-col gap-2">
 					<For each={connections()}>
@@ -71,8 +71,8 @@ function Libraries() {
 				open={modal() !== null}
 				title={
 					modal()?.mode === "edit"
-						? t("settings.libraries.modalTitleEdit")
-						: t("settings.libraries.modalTitleAdd")
+						? t("settings.connections.modalTitleEdit")
+						: t("settings.connections.modalTitleAdd")
 				}
 				onClose={closeModal}
 			>
@@ -96,4 +96,4 @@ function Libraries() {
 	);
 }
 
-export default Libraries;
+export default Connections;

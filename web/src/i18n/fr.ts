@@ -15,7 +15,7 @@ export const dict: Dict = {
 	},
 	settingsNav: {
 		general: "Général",
-		libraries: "Bibliothèques",
+		connections: "Connexions",
 	},
 	dashboard: {
 		title: "Tableau de bord",
@@ -27,7 +27,7 @@ export const dict: Dict = {
 		connectionLabel: "Connexion",
 		libraryLabel: "Bibliothèque",
 		noConnections:
-			"Aucune connexion configurée pour le moment. Ajoutez-en une dans Paramètres › Bibliothèques.",
+			"Aucune connexion Plex configurée pour le moment. Ajoutez-en une dans Paramètres › Connexions.",
 		loadError: "Échec du chargement des bibliothèques de ce serveur.",
 		noLibraries: "Aucune bibliothèque trouvée sur ce serveur.",
 		itemsLoadError: "Échec du chargement des éléments de cette bibliothèque.",
@@ -40,12 +40,12 @@ export const dict: Dict = {
 			title: "Général",
 			locale: "Langue",
 		},
-		libraries: {
-			title: "Bibliothèques",
-			addButton: "Ajouter une bibliothèque",
-			empty: "Aucune bibliothèque connectée pour le moment.",
-			modalTitleAdd: "Ajouter une bibliothèque",
-			modalTitleEdit: "Modifier la bibliothèque",
+		connections: {
+			title: "Connexions",
+			addButton: "Ajouter une connexion",
+			empty: "Aucune connexion configurée pour le moment.",
+			modalTitleAdd: "Ajouter une connexion",
+			modalTitleEdit: "Modifier la connexion",
 			tokenEditHint: "Laisser vide pour conserver le jeton actuel",
 			testButton: "Tester la connexion",
 			testing: "Test en cours...",
@@ -57,6 +57,7 @@ export const dict: Dict = {
 				port: "Port",
 				ssl: "Utiliser SSL",
 				token: "Jeton",
+				apiKey: "Clé API",
 			},
 		},
 	},

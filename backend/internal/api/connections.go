@@ -14,6 +14,7 @@ import (
 	"github.com/oom-killed/lib-managerr/ent/connection"
 	"github.com/oom-killed/lib-managerr/internal/logging"
 	"github.com/oom-killed/lib-managerr/internal/plex"
+	"github.com/oom-killed/lib-managerr/internal/radarr"
 )
 
 type connectionInput struct {
@@ -45,6 +46,11 @@ func testConnectionType(ctx context.Context, in testConnectionInput) testConnect
 	switch in.Type {
 	case connection.TypePlex:
 		if err := plex.Ping(ctx, plex.Config{Host: in.Host, Port: in.Port, SSL: in.SSL, Token: in.Token}); err != nil {
+			return testConnectionResult{OK: false, Error: err.Error()}
+		}
+		return testConnectionResult{OK: true}
+	case connection.TypeRadarr:
+		if err := radarr.Ping(ctx, radarr.Config{Host: in.Host, Port: in.Port, SSL: in.SSL, APIKey: in.Token}); err != nil {
 			return testConnectionResult{OK: false, Error: err.Error()}
 		}
 		return testConnectionResult{OK: true}

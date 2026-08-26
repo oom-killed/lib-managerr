@@ -1,8 +1,14 @@
-// Shared across routes: settings/libraries owns Connection CRUD, the root
+// Shared across routes: settings/connections owns Connection CRUD, the root
 // Libraries page uses fetchConnections + fetchConnectionLibraries to build
 // its connection/library selector.
 
-export type ConnectionType = "plex";
+export type ConnectionType = "plex" | "radarr";
+
+// Media-server-type connections (Plex, and eventually Jellyfin/Emby) have
+// browsable library sections; data-only connections (Radarr, Sonarr,
+// Seerr, ...) don't — they're used to fetch additional data, not to browse
+// media. The root Libraries page's connection picker filters to this list.
+export const LIBRARY_CAPABLE_CONNECTION_TYPES: ConnectionType[] = ["plex"];
 
 export type Connection = {
 	id: number;

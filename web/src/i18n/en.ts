@@ -13,7 +13,7 @@ export type Dict = {
 	};
 	settingsNav: {
 		general: string;
-		libraries: string;
+		connections: string;
 	};
 	dashboard: {
 		title: string;
@@ -37,7 +37,7 @@ export type Dict = {
 			title: string;
 			locale: string;
 		};
-		libraries: {
+		connections: {
 			title: string;
 			addButton: string;
 			empty: string;
@@ -54,6 +54,7 @@ export type Dict = {
 				port: string;
 				ssl: string;
 				token: string;
+				apiKey: string;
 			};
 		};
 	};
@@ -74,7 +75,7 @@ export const dict: Dict = {
 	},
 	settingsNav: {
 		general: "General",
-		libraries: "Libraries",
+		connections: "Connections",
 	},
 	dashboard: {
 		title: "Dashboard",
@@ -86,7 +87,7 @@ export const dict: Dict = {
 		connectionLabel: "Connection",
 		libraryLabel: "Library",
 		noConnections:
-			"No connections configured yet. Add one in Settings › Libraries.",
+			"No Plex connections configured yet. Add one in Settings › Connections.",
 		loadError: "Failed to load libraries from this server.",
 		noLibraries: "No libraries found on this server.",
 		itemsLoadError: "Failed to load items from this library.",
@@ -99,12 +100,12 @@ export const dict: Dict = {
 			title: "General",
 			locale: "Language",
 		},
-		libraries: {
-			title: "Libraries",
-			addButton: "Add Library",
-			empty: "No libraries connected yet.",
-			modalTitleAdd: "Add Library",
-			modalTitleEdit: "Edit Library",
+		connections: {
+			title: "Connections",
+			addButton: "Add Connection",
+			empty: "No connections configured yet.",
+			modalTitleAdd: "Add Connection",
+			modalTitleEdit: "Edit Connection",
 			tokenEditHint: "Leave blank to keep the current token",
 			testButton: "Test Connection",
 			testing: "Testing...",
@@ -116,6 +117,7 @@ export const dict: Dict = {
 				port: "Port",
 				ssl: "Use SSL",
 				token: "Token",
+				apiKey: "API Key",
 			},
 		},
 	},

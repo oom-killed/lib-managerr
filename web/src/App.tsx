@@ -3,8 +3,8 @@ import { AppShell } from "./AppShell.tsx";
 import { I18nProvider } from "./i18n/index.tsx";
 import Dashboard from "./routes/Dashboard.tsx";
 import Libraries from "./routes/Libraries.tsx";
+import Connections from "./routes/settings/Connections.tsx";
 import General from "./routes/settings/General.tsx";
-import SettingsLibraries from "./routes/settings/Libraries.tsx";
 import { LibrarySelectionProvider } from "./state/librarySelection.tsx";
 
 function App() {
@@ -19,7 +19,7 @@ function App() {
 						component={() => <Navigate href="/settings/general" />}
 					/>
 					<Route path="/settings/general" component={General} />
-					<Route path="/settings/libraries" component={SettingsLibraries} />
+					<Route path="/settings/connections" component={Connections} />
 				</Router>
 			</LibrarySelectionProvider>
 		</I18nProvider>

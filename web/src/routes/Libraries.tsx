@@ -11,6 +11,7 @@ import {
 	fetchConnectionLibraries,
 	fetchConnections,
 	fetchLibraryItems,
+	LIBRARY_CAPABLE_CONNECTION_TYPES,
 } from "../api/connections.ts";
 import { useI18n } from "../i18n/index.tsx";
 import { useLibrarySelection } from "../state/librarySelection.tsx";
@@ -24,10 +25,18 @@ function Libraries() {
 	const [connections] = createResource(fetchConnections);
 	const [offset, setOffset] = createSignal(0);
 
-	// Default to the first connection once the list loads.
+	// Only connections whose type actually has browsable libraries (Plex —
+	// Radarr/Sonarr/Seerr connections fetch additional data, they aren't
+	// media sources) are offered here.
+	const libraryConnections = () =>
+		(connections() ?? []).filter((c) =>
+			LIBRARY_CAPABLE_CONNECTION_TYPES.includes(c.type),
+		);
+
+	// Default to the first library-capable connection once the list loads.
 	createEffect(() => {
-		const list = connections();
-		if (list && list.length > 0 && connectionId() === undefined) {
+		const list = libraryConnections();
+		if (list.length > 0 && connectionId() === undefined) {
 			setConnectionId(list[0].id);
 		}
 	});
@@ -65,7 +74,7 @@ function Libraries() {
 	const [items] = createResource(itemsSource, fetchLibraryItems);
 
 	const connectionOptions = () =>
-		(connections() ?? []).map((connection: Connection) => ({
+		libraryConnections().map((connection: Connection) => ({
 			value: String(connection.id),
 			label: connection.name,
 		}));
@@ -81,7 +90,7 @@ function Libraries() {
 			<h1>{t("libraries.title")}</h1>
 
 			<Show
-				when={(connections()?.length ?? 0) > 0}
+				when={libraryConnections().length > 0}
 				fallback={<p class="mt-4">{t("libraries.noConnections")}</p>}
 			>
 				<div class="mt-4 flex flex-col gap-3">

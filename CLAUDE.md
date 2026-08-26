@@ -58,9 +58,9 @@ Every component in `packages/ui` gets a co-located `*.stories.tsx` file. Run `ma
 catalog and check components in isolation.
 
 `web/src/api/` holds data-fetching functions shared across more than one route (e.g. `connections.ts` — both
-`routes/settings/Libraries.tsx` (CRUD) and `routes/Libraries.tsx` (the connection/library selector) use it).
-Route-specific API calls stay co-located with the route instead (e.g. nothing in `routes/settings/libraries/`
-besides the Connection form's own concerns).
+`routes/settings/Connections.tsx` (CRUD) and `routes/Libraries.tsx` (the connection/library selector) use
+it). Route-specific API calls stay co-located with the route instead (e.g. nothing in
+`routes/settings/connections/` besides the Connection form's own concerns).
 
 **Dark mode has no guaranteed dark backdrop unless something paints one.** `color-scheme: light dark` alone
 doesn't reliably give a dark page background across browsers — `AppShell`'s root div explicitly sets
@@ -68,7 +68,7 @@ doesn't reliably give a dark page background across browsers — `AppShell`'s ro
 reason. A component using `dark:text-neutral-50`-style light text without a guaranteed dark background behind
 it will render unreadable light-on-white outside of states (like `:hover`) that happen to set their own dark
 background — this has bitten a couple of components already (`NavLink`, a plain `<button>` in
-`settings/Libraries.tsx`). Also: plain `<button>` elements need `appearance-none`, since Tailwind v4's
+`settings/Connections.tsx`). Also: plain `<button>` elements need `appearance-none`, since Tailwind v4's
 preflight explicitly restores native `appearance: button`, letting OS button chrome interfere with custom
 background/hover styling.
 
@@ -111,7 +111,7 @@ per-dialect SQL. Migrations are ent's built-in schema sync (`client.Schema.Creat
 `main.go`); a versioned migration tool (e.g. Atlas) is a later addition if schema changes in production ever
 need more control than "sync to current shape."
 
-First entities: `Connection` (credentials to reach one server — `type` enum, currently just `"plex"`; `name`,
+First entities: `Connection` (credentials to reach one server — `type` enum, `"plex"`/`"radarr"`; `name`,
 `host`, `port`, `ssl`, `token`) and `Library` (one trackable section on a `Connection` — `external_id` is the
 remote section id, e.g. Plex's library key; `title`; `media_type` enum `movie`/`show`/`artist`; `enabled`).
 They're separate entities, not one, because a single server connection can have many library sections you'd
@@ -158,10 +158,32 @@ same `/library/sections/{key}/all` response already used for the item list — n
 `host`, `port`, `ssl`, `token`) are deliberately generic across host-based server integrations, not
 Plex-specific — a new type is a new `ent/schema/connection.go` enum value plus, on the frontend, a new
 `ConnectionType` union member and a `CONNECTION_TYPE_FIELDS`/`CONNECTION_TYPE_OPTIONS` registry entry
-(`web/src/routes/settings/libraries/connectionTypes.ts`). `ConnectionForm.tsx` renders fields by iterating
+(`web/src/routes/settings/connections/connectionTypes.ts`). `ConnectionForm.tsx` renders fields by iterating
 that registry rather than hardcoding JSX per field, so the modal/list/page code doesn't change when a type
 is added — only the registry does. The type-selector dropdown only renders once there's more than one
 option, to avoid a pointless single-item `<select>` today.
+
+`radarr` (added after Plex) proved this out: adding it touched only the ent enum, a new `internal/radarr`
+client package (`Ping` → `/api/v3/system/status` with an `X-Api-Key` header, Radarr's equivalent of Plex's
+`/identity` check), one `case` in `testConnectionType`, and the frontend registry — no changes to
+`ConnectionForm.tsx`, the modal, or the connections list. A field can have a different label per type even
+though it shares the same underlying key: Radarr's `token` field uses the `apiKey` label
+(`settings.connections.fields.apiKey`) instead of `token`'s, since `CONNECTION_TYPE_FIELDS` is keyed by
+type, each with its own `labelKey` per field. Radarr connections don't support `/libraries` or `/items`
+(Radarr manages movies directly, it has no "library sections" the way Plex does) — those endpoints' `default`
+dispatch case returns "unsupported connection type", surfaced as a normal `502` on the frontend, not a crash.
+
+**"Connection" ≠ "Library"**: a Connection is credentials for reaching *any* external service — media
+servers (Plex, eventually Jellyfin/Emby) that have browsable library sections, *and* data-only services
+(Radarr, Sonarr, Seerr) that don't, used only to fetch additional data. Adding Radarr revealed that Settings'
+page for configuring connections was still named/labeled "Libraries" from when Plex was the only type,
+which is wrong for a Radarr connection — it's not a library. That page is `routes/settings/Connections.tsx`
+now (`/settings/connections`, `settingsNav.connections`, `settings.connections.*` i18n keys), matching what
+the backend already called it (`Connection` entity, `/api/connections`). The root `routes/Libraries.tsx`
+(actual Plex library/item browsing) keeps its name — it genuinely is about libraries — but its connection
+picker filters to `LIBRARY_CAPABLE_CONNECTION_TYPES` (`web/src/api/connections.ts`, currently just `["plex"]`)
+so a Radarr connection never shows up somewhere it can't be browsed. Extend that list, not the picker's
+logic, when Jellyfin/Emby support lands.
 
 ## Logging
 

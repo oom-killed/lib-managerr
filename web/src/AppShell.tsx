@@ -34,9 +34,9 @@ export function AppShell(props: { children?: JSX.Element }) {
 						/>
 						<NavLink
 							as={A}
-							href="/settings/libraries"
-							label={t("settingsNav.libraries")}
-							isActive={isActive("/settings/libraries")}
+							href="/settings/connections"
+							label={t("settingsNav.connections")}
+							isActive={isActive("/settings/connections")}
 						/>
 					</NavGroup>
 				</Sidebar>

@@ -22,7 +22,7 @@ func (Connection) Mixin() []ent.Mixin {
 func (Connection) Fields() []ent.Field {
 	return []ent.Field{
 		field.Enum("type").
-			Values("plex"),
+			Values("plex", "radarr"),
 		field.String("name").
 			NotEmpty(),
 		field.String("host").
