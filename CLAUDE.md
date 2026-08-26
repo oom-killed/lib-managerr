@@ -220,6 +220,12 @@ exactly (`internal/sonarr.Ping` → `/api/v3/system/status` with `X-Api-Key`, on
 and Sonarr connections are automatically excluded from the root Libraries page's picker with zero extra
 code, since `LIBRARY_CAPABLE_CONNECTION_TYPES` (`web/src/api/connections.ts`) is still just `["plex"]`.
 
+`seerr` (added after Sonarr) confirmed the pattern holds for a third follow-on type: same shape again
+(`internal/seerr.Ping` → `/api/v1/status` with `X-Api-Key`, Seerr's — Overseerr/Jellyseerr's — own health
+check path, one `case` in `testConnectionType`, reuses the existing `apiKey` label). No enrichment yet
+(unlike Radarr/Sonarr) — Seerr connections are for a later increment (e.g. surfacing pending requests); for
+now `test`/CRUD support is the whole scope, same as Radarr/Sonarr had before their enrichment was added.
+
 **"Connection" ≠ "Library"**: a Connection is credentials for reaching *any* external service — media
 servers (Plex, eventually Jellyfin/Emby) that have browsable library sections, *and* data-only services
 (Radarr, Sonarr, Seerr) that don't, used only to fetch additional data. Adding Radarr revealed that Settings'

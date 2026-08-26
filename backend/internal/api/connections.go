@@ -16,6 +16,7 @@ import (
 	"github.com/oom-killed/lib-managerr/internal/logging"
 	"github.com/oom-killed/lib-managerr/internal/plex"
 	"github.com/oom-killed/lib-managerr/internal/radarr"
+	"github.com/oom-killed/lib-managerr/internal/seerr"
 	"github.com/oom-killed/lib-managerr/internal/sonarr"
 )
 
@@ -58,6 +59,11 @@ func testConnectionType(ctx context.Context, in testConnectionInput) testConnect
 		return testConnectionResult{OK: true}
 	case connection.TypeSonarr:
 		if err := sonarr.Ping(ctx, sonarr.Config{Host: in.Host, Port: in.Port, SSL: in.SSL, APIKey: in.Token}); err != nil {
+			return testConnectionResult{OK: false, Error: err.Error()}
+		}
+		return testConnectionResult{OK: true}
+	case connection.TypeSeerr:
+		if err := seerr.Ping(ctx, seerr.Config{Host: in.Host, Port: in.Port, SSL: in.SSL, APIKey: in.Token}); err != nil {
 			return testConnectionResult{OK: false, Error: err.Error()}
 		}
 		return testConnectionResult{OK: true}
