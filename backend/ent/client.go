@@ -341,6 +341,22 @@ func (c *ConnectionClient) QueryLibraries(_m *Connection) *LibraryQuery {
 	return query
 }
 
+// QueryRules queries the rules edge of a Connection.
+func (c *ConnectionClient) QueryRules(_m *Connection) *RuleQuery {
+	query := (&RuleClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(connection.Table, connection.FieldID, id),
+			sqlgraph.To(rule.Table, rule.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, connection.RulesTable, connection.RulesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *ConnectionClient) Hooks() []Hook {
 	return c.hooks.Connection
@@ -621,6 +637,22 @@ func (c *RuleClient) GetX(ctx context.Context, id int) *Rule {
 		panic(err)
 	}
 	return obj
+}
+
+// QueryConnection queries the connection edge of a Rule.
+func (c *RuleClient) QueryConnection(_m *Rule) *ConnectionQuery {
+	query := (&ConnectionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(rule.Table, rule.FieldID, id),
+			sqlgraph.To(connection.Table, connection.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, rule.ConnectionTable, rule.ConnectionColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // Hooks returns the client hooks.

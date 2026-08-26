@@ -33,6 +33,8 @@ const (
 	FieldToken = "token"
 	// EdgeLibraries holds the string denoting the libraries edge name in mutations.
 	EdgeLibraries = "libraries"
+	// EdgeRules holds the string denoting the rules edge name in mutations.
+	EdgeRules = "rules"
 	// Table holds the table name of the connection in the database.
 	Table = "connections"
 	// LibrariesTable is the table that holds the libraries relation/edge.
@@ -42,6 +44,13 @@ const (
 	LibrariesInverseTable = "libraries"
 	// LibrariesColumn is the table column denoting the libraries relation/edge.
 	LibrariesColumn = "connection_libraries"
+	// RulesTable is the table that holds the rules relation/edge.
+	RulesTable = "rules"
+	// RulesInverseTable is the table name for the Rule entity.
+	// It exists in this package in order to avoid circular dependency with the "rule" package.
+	RulesInverseTable = "rules"
+	// RulesColumn is the table column denoting the rules relation/edge.
+	RulesColumn = "connection_id"
 )
 
 // Columns holds all SQL columns for connection fields.
@@ -172,10 +181,31 @@ func ByLibraries(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newLibrariesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByRulesCount orders the results by rules count.
+func ByRulesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newRulesStep(), opts...)
+	}
+}
+
+// ByRules orders the results by rules terms.
+func ByRules(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newRulesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newLibrariesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(LibrariesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, LibrariesTable, LibrariesColumn),
+	)
+}
+func newRulesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(RulesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, RulesTable, RulesColumn),
 	)
 }

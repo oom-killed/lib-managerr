@@ -65,12 +65,23 @@ var (
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString},
 		{Name: "enabled", Type: field.TypeBool, Default: true},
+		{Name: "action", Type: field.TypeEnum, Enums: []string{"change_quality_and_search", "delete", "do_nothing", "unmonitor_and_delete_files", "unmonitor_and_keep_files"}, Default: "do_nothing"},
+		{Name: "library_key", Type: field.TypeString},
+		{Name: "connection_id", Type: field.TypeInt},
 	}
 	// RulesTable holds the schema information for the "rules" table.
 	RulesTable = &schema.Table{
 		Name:       "rules",
 		Columns:    RulesColumns,
 		PrimaryKey: []*schema.Column{RulesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "rules_connections_rules",
+				Columns:    []*schema.Column{RulesColumns[7]},
+				RefColumns: []*schema.Column{ConnectionsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
@@ -82,4 +93,5 @@ var (
 
 func init() {
 	LibrariesTable.ForeignKeys[0].RefTable = ConnectionsTable
+	RulesTable.ForeignKeys[0].RefTable = ConnectionsTable
 }

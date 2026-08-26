@@ -9,6 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/oom-killed/lib-managerr/ent/connection"
 	"github.com/oom-killed/lib-managerr/ent/rule"
 )
 
@@ -24,8 +25,37 @@ type Rule struct {
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// Enabled holds the value of the "enabled" field.
-	Enabled      bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled,omitempty"`
+	// Action holds the value of the "action" field.
+	Action rule.Action `json:"action,omitempty"`
+	// ConnectionID holds the value of the "connection_id" field.
+	ConnectionID int `json:"connectionId,omitempty"`
+	// LibraryKey holds the value of the "library_key" field.
+	LibraryKey string `json:"libraryKey,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the RuleQuery when eager-loading is set.
+	Edges        RuleEdges `json:"edges"`
 	selectValues sql.SelectValues
+}
+
+// RuleEdges holds the relations/edges for other nodes in the graph.
+type RuleEdges struct {
+	// Connection holds the value of the connection edge.
+	Connection *Connection `json:"connection,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+}
+
+// ConnectionOrErr returns the Connection value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e RuleEdges) ConnectionOrErr() (*Connection, error) {
+	if e.Connection != nil {
+		return e.Connection, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: connection.Label}
+	}
+	return nil, &NotLoadedError{edge: "connection"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -35,9 +65,9 @@ func (*Rule) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case rule.FieldEnabled:
 			values[i] = new(sql.NullBool)
-		case rule.FieldID:
+		case rule.FieldID, rule.FieldConnectionID:
 			values[i] = new(sql.NullInt64)
-		case rule.FieldName:
+		case rule.FieldName, rule.FieldAction, rule.FieldLibraryKey:
 			values[i] = new(sql.NullString)
 		case rule.FieldCreatedAt, rule.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -86,6 +116,24 @@ func (_m *Rule) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Enabled = value.Bool
 			}
+		case rule.FieldAction:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field action", values[i])
+			} else if value.Valid {
+				_m.Action = rule.Action(value.String)
+			}
+		case rule.FieldConnectionID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field connection_id", values[i])
+			} else if value.Valid {
+				_m.ConnectionID = int(value.Int64)
+			}
+		case rule.FieldLibraryKey:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field library_key", values[i])
+			} else if value.Valid {
+				_m.LibraryKey = value.String
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -97,6 +145,11 @@ func (_m *Rule) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (_m *Rule) Value(name string) (ent.Value, error) {
 	return _m.selectValues.Get(name)
+}
+
+// QueryConnection queries the "connection" edge of the Rule entity.
+func (_m *Rule) QueryConnection() *ConnectionQuery {
+	return NewRuleClient(_m.config).QueryConnection(_m)
 }
 
 // Update returns a builder for updating this Rule.
@@ -133,6 +186,15 @@ func (_m *Rule) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("enabled=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Enabled))
+	builder.WriteString(", ")
+	builder.WriteString("action=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Action))
+	builder.WriteString(", ")
+	builder.WriteString("connection_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ConnectionID))
+	builder.WriteString(", ")
+	builder.WriteString("library_key=")
+	builder.WriteString(_m.LibraryKey)
 	builder.WriteByte(')')
 	return builder.String()
 }

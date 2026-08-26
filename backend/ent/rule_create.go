@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/oom-killed/lib-managerr/ent/connection"
 	"github.com/oom-killed/lib-managerr/ent/rule"
 )
 
@@ -68,6 +69,37 @@ func (_c *RuleCreate) SetNillableEnabled(v *bool) *RuleCreate {
 	return _c
 }
 
+// SetAction sets the "action" field.
+func (_c *RuleCreate) SetAction(v rule.Action) *RuleCreate {
+	_c.mutation.SetAction(v)
+	return _c
+}
+
+// SetNillableAction sets the "action" field if the given value is not nil.
+func (_c *RuleCreate) SetNillableAction(v *rule.Action) *RuleCreate {
+	if v != nil {
+		_c.SetAction(*v)
+	}
+	return _c
+}
+
+// SetConnectionID sets the "connection_id" field.
+func (_c *RuleCreate) SetConnectionID(v int) *RuleCreate {
+	_c.mutation.SetConnectionID(v)
+	return _c
+}
+
+// SetLibraryKey sets the "library_key" field.
+func (_c *RuleCreate) SetLibraryKey(v string) *RuleCreate {
+	_c.mutation.SetLibraryKey(v)
+	return _c
+}
+
+// SetConnection sets the "connection" edge to the Connection entity.
+func (_c *RuleCreate) SetConnection(v *Connection) *RuleCreate {
+	return _c.SetConnectionID(v.ID)
+}
+
 // Mutation returns the RuleMutation object of the builder.
 func (_c *RuleCreate) Mutation() *RuleMutation {
 	return _c.mutation
@@ -115,6 +147,10 @@ func (_c *RuleCreate) defaults() {
 		v := rule.DefaultEnabled
 		_c.mutation.SetEnabled(v)
 	}
+	if _, ok := _c.mutation.Action(); !ok {
+		v := rule.DefaultAction
+		_c.mutation.SetAction(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -135,6 +171,28 @@ func (_c *RuleCreate) check() error {
 	}
 	if _, ok := _c.mutation.Enabled(); !ok {
 		return &ValidationError{Name: "enabled", err: errors.New(`ent: missing required field "Rule.enabled"`)}
+	}
+	if _, ok := _c.mutation.Action(); !ok {
+		return &ValidationError{Name: "action", err: errors.New(`ent: missing required field "Rule.action"`)}
+	}
+	if v, ok := _c.mutation.Action(); ok {
+		if err := rule.ActionValidator(v); err != nil {
+			return &ValidationError{Name: "action", err: fmt.Errorf(`ent: validator failed for field "Rule.action": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.ConnectionID(); !ok {
+		return &ValidationError{Name: "connection_id", err: errors.New(`ent: missing required field "Rule.connection_id"`)}
+	}
+	if _, ok := _c.mutation.LibraryKey(); !ok {
+		return &ValidationError{Name: "library_key", err: errors.New(`ent: missing required field "Rule.library_key"`)}
+	}
+	if v, ok := _c.mutation.LibraryKey(); ok {
+		if err := rule.LibraryKeyValidator(v); err != nil {
+			return &ValidationError{Name: "library_key", err: fmt.Errorf(`ent: validator failed for field "Rule.library_key": %w`, err)}
+		}
+	}
+	if len(_c.mutation.ConnectionIDs()) == 0 {
+		return &ValidationError{Name: "connection", err: errors.New(`ent: missing required edge "Rule.connection"`)}
 	}
 	return nil
 }
@@ -177,6 +235,31 @@ func (_c *RuleCreate) createSpec() (*Rule, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Enabled(); ok {
 		_spec.SetField(rule.FieldEnabled, field.TypeBool, value)
 		_node.Enabled = value
+	}
+	if value, ok := _c.mutation.Action(); ok {
+		_spec.SetField(rule.FieldAction, field.TypeEnum, value)
+		_node.Action = value
+	}
+	if value, ok := _c.mutation.LibraryKey(); ok {
+		_spec.SetField(rule.FieldLibraryKey, field.TypeString, value)
+		_node.LibraryKey = value
+	}
+	if nodes := _c.mutation.ConnectionIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   rule.ConnectionTable,
+			Columns: []string{rule.ConnectionColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(connection.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.ConnectionID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

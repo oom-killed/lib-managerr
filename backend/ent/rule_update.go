@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/oom-killed/lib-managerr/ent/connection"
 	"github.com/oom-killed/lib-managerr/ent/predicate"
 	"github.com/oom-killed/lib-managerr/ent/rule"
 )
@@ -62,9 +63,62 @@ func (_u *RuleUpdate) SetNillableEnabled(v *bool) *RuleUpdate {
 	return _u
 }
 
+// SetAction sets the "action" field.
+func (_u *RuleUpdate) SetAction(v rule.Action) *RuleUpdate {
+	_u.mutation.SetAction(v)
+	return _u
+}
+
+// SetNillableAction sets the "action" field if the given value is not nil.
+func (_u *RuleUpdate) SetNillableAction(v *rule.Action) *RuleUpdate {
+	if v != nil {
+		_u.SetAction(*v)
+	}
+	return _u
+}
+
+// SetConnectionID sets the "connection_id" field.
+func (_u *RuleUpdate) SetConnectionID(v int) *RuleUpdate {
+	_u.mutation.SetConnectionID(v)
+	return _u
+}
+
+// SetNillableConnectionID sets the "connection_id" field if the given value is not nil.
+func (_u *RuleUpdate) SetNillableConnectionID(v *int) *RuleUpdate {
+	if v != nil {
+		_u.SetConnectionID(*v)
+	}
+	return _u
+}
+
+// SetLibraryKey sets the "library_key" field.
+func (_u *RuleUpdate) SetLibraryKey(v string) *RuleUpdate {
+	_u.mutation.SetLibraryKey(v)
+	return _u
+}
+
+// SetNillableLibraryKey sets the "library_key" field if the given value is not nil.
+func (_u *RuleUpdate) SetNillableLibraryKey(v *string) *RuleUpdate {
+	if v != nil {
+		_u.SetLibraryKey(*v)
+	}
+	return _u
+}
+
+// SetConnection sets the "connection" edge to the Connection entity.
+func (_u *RuleUpdate) SetConnection(v *Connection) *RuleUpdate {
+	return _u.SetConnectionID(v.ID)
+}
+
 // Mutation returns the RuleMutation object of the builder.
 func (_u *RuleUpdate) Mutation() *RuleMutation {
 	return _u.mutation
+}
+
+// ClearConnection clears the "connection" edge to the Connection entity.
+func (_u *RuleUpdate) ClearConnection() *RuleUpdate {
+	_u.mutation.ClearConnection()
+	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -110,6 +164,19 @@ func (_u *RuleUpdate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Rule.name": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Action(); ok {
+		if err := rule.ActionValidator(v); err != nil {
+			return &ValidationError{Name: "action", err: fmt.Errorf(`ent: validator failed for field "Rule.action": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.LibraryKey(); ok {
+		if err := rule.LibraryKeyValidator(v); err != nil {
+			return &ValidationError{Name: "library_key", err: fmt.Errorf(`ent: validator failed for field "Rule.library_key": %w`, err)}
+		}
+	}
+	if _u.mutation.ConnectionCleared() && len(_u.mutation.ConnectionIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "Rule.connection"`)
+	}
 	return nil
 }
 
@@ -133,6 +200,41 @@ func (_u *RuleUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.Enabled(); ok {
 		_spec.SetField(rule.FieldEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.Action(); ok {
+		_spec.SetField(rule.FieldAction, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.LibraryKey(); ok {
+		_spec.SetField(rule.FieldLibraryKey, field.TypeString, value)
+	}
+	if _u.mutation.ConnectionCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   rule.ConnectionTable,
+			Columns: []string{rule.ConnectionColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(connection.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ConnectionIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   rule.ConnectionTable,
+			Columns: []string{rule.ConnectionColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(connection.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -188,9 +290,62 @@ func (_u *RuleUpdateOne) SetNillableEnabled(v *bool) *RuleUpdateOne {
 	return _u
 }
 
+// SetAction sets the "action" field.
+func (_u *RuleUpdateOne) SetAction(v rule.Action) *RuleUpdateOne {
+	_u.mutation.SetAction(v)
+	return _u
+}
+
+// SetNillableAction sets the "action" field if the given value is not nil.
+func (_u *RuleUpdateOne) SetNillableAction(v *rule.Action) *RuleUpdateOne {
+	if v != nil {
+		_u.SetAction(*v)
+	}
+	return _u
+}
+
+// SetConnectionID sets the "connection_id" field.
+func (_u *RuleUpdateOne) SetConnectionID(v int) *RuleUpdateOne {
+	_u.mutation.SetConnectionID(v)
+	return _u
+}
+
+// SetNillableConnectionID sets the "connection_id" field if the given value is not nil.
+func (_u *RuleUpdateOne) SetNillableConnectionID(v *int) *RuleUpdateOne {
+	if v != nil {
+		_u.SetConnectionID(*v)
+	}
+	return _u
+}
+
+// SetLibraryKey sets the "library_key" field.
+func (_u *RuleUpdateOne) SetLibraryKey(v string) *RuleUpdateOne {
+	_u.mutation.SetLibraryKey(v)
+	return _u
+}
+
+// SetNillableLibraryKey sets the "library_key" field if the given value is not nil.
+func (_u *RuleUpdateOne) SetNillableLibraryKey(v *string) *RuleUpdateOne {
+	if v != nil {
+		_u.SetLibraryKey(*v)
+	}
+	return _u
+}
+
+// SetConnection sets the "connection" edge to the Connection entity.
+func (_u *RuleUpdateOne) SetConnection(v *Connection) *RuleUpdateOne {
+	return _u.SetConnectionID(v.ID)
+}
+
 // Mutation returns the RuleMutation object of the builder.
 func (_u *RuleUpdateOne) Mutation() *RuleMutation {
 	return _u.mutation
+}
+
+// ClearConnection clears the "connection" edge to the Connection entity.
+func (_u *RuleUpdateOne) ClearConnection() *RuleUpdateOne {
+	_u.mutation.ClearConnection()
+	return _u
 }
 
 // Where appends a list predicates to the RuleUpdate builder.
@@ -249,6 +404,19 @@ func (_u *RuleUpdateOne) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Rule.name": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Action(); ok {
+		if err := rule.ActionValidator(v); err != nil {
+			return &ValidationError{Name: "action", err: fmt.Errorf(`ent: validator failed for field "Rule.action": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.LibraryKey(); ok {
+		if err := rule.LibraryKeyValidator(v); err != nil {
+			return &ValidationError{Name: "library_key", err: fmt.Errorf(`ent: validator failed for field "Rule.library_key": %w`, err)}
+		}
+	}
+	if _u.mutation.ConnectionCleared() && len(_u.mutation.ConnectionIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "Rule.connection"`)
+	}
 	return nil
 }
 
@@ -289,6 +457,41 @@ func (_u *RuleUpdateOne) sqlSave(ctx context.Context) (_node *Rule, err error) {
 	}
 	if value, ok := _u.mutation.Enabled(); ok {
 		_spec.SetField(rule.FieldEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.Action(); ok {
+		_spec.SetField(rule.FieldAction, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.LibraryKey(); ok {
+		_spec.SetField(rule.FieldLibraryKey, field.TypeString, value)
+	}
+	if _u.mutation.ConnectionCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   rule.ConnectionTable,
+			Columns: []string{rule.ConnectionColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(connection.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ConnectionIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   rule.ConnectionTable,
+			Columns: []string{rule.ConnectionColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(connection.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Rule{config: _u.config}
 	_spec.Assign = _node.assignValues

@@ -40,5 +40,6 @@ func (Connection) Fields() []ent.Field {
 func (Connection) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("libraries", Library.Type),
+		edge.To("rules", Rule.Type),
 	}
 }

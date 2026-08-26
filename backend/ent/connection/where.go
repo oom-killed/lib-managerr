@@ -458,6 +458,29 @@ func HasLibrariesWith(preds ...predicate.Library) predicate.Connection {
 	})
 }
 
+// HasRules applies the HasEdge predicate on the "rules" edge.
+func HasRules() predicate.Connection {
+	return predicate.Connection(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, RulesTable, RulesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasRulesWith applies the HasEdge predicate on the "rules" edge with a given conditions (other predicates).
+func HasRulesWith(preds ...predicate.Rule) predicate.Connection {
+	return predicate.Connection(func(s *sql.Selector) {
+		step := newRulesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Connection) predicate.Connection {
 	return predicate.Connection(sql.AndPredicates(predicates...))

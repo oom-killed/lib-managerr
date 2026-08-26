@@ -9,6 +9,7 @@ import {
 } from "../api/rules.ts";
 import { useI18n } from "../i18n/index.tsx";
 import { RuleForm } from "./rules/RuleForm.tsx";
+import { RULE_ACTION_OPTIONS } from "./rules/ruleActions.ts";
 
 type ModalState = { mode: "add" } | { mode: "edit"; rule: Rule } | null;
 
@@ -33,6 +34,11 @@ function Rules() {
 	const handleDelete = async (rule: Rule) => {
 		await deleteRule(rule.id);
 		await refetch();
+	};
+
+	const actionLabel = (rule: Rule) => {
+		const option = RULE_ACTION_OPTIONS.find((o) => o.value === rule.action);
+		return option ? t(option.labelKey) : rule.action;
 	};
 
 	return (
@@ -62,6 +68,8 @@ function Rules() {
 										{rule.enabled
 											? t("rules.enabledLabel")
 											: t("rules.disabledLabel")}
+										{" · "}
+										{actionLabel(rule)}
 									</div>
 								</button>
 								<Button variant="secondary" onClick={() => handleDelete(rule)}>

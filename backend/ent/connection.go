@@ -43,9 +43,11 @@ type Connection struct {
 type ConnectionEdges struct {
 	// Libraries holds the value of the libraries edge.
 	Libraries []*Library `json:"libraries,omitempty"`
+	// Rules holds the value of the rules edge.
+	Rules []*Rule `json:"rules,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // LibrariesOrErr returns the Libraries value or an error if the edge
@@ -55,6 +57,15 @@ func (e ConnectionEdges) LibrariesOrErr() ([]*Library, error) {
 		return e.Libraries, nil
 	}
 	return nil, &NotLoadedError{edge: "libraries"}
+}
+
+// RulesOrErr returns the Rules value or an error if the edge
+// was not loaded in eager-loading.
+func (e ConnectionEdges) RulesOrErr() ([]*Rule, error) {
+	if e.loadedTypes[1] {
+		return e.Rules, nil
+	}
+	return nil, &NotLoadedError{edge: "rules"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -155,6 +166,11 @@ func (_m *Connection) Value(name string) (ent.Value, error) {
 // QueryLibraries queries the "libraries" edge of the Connection entity.
 func (_m *Connection) QueryLibraries() *LibraryQuery {
 	return NewConnectionClient(_m.config).QueryLibraries(_m)
+}
+
+// QueryRules queries the "rules" edge of the Connection entity.
+func (_m *Connection) QueryRules() *RuleQuery {
+	return NewConnectionClient(_m.config).QueryRules(_m)
 }
 
 // Update returns a builder for updating this Connection.

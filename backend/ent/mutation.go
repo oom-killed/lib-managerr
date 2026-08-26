@@ -50,6 +50,9 @@ type ConnectionMutation struct {
 	libraries        map[int]struct{}
 	removedlibraries map[int]struct{}
 	clearedlibraries bool
+	rules            map[int]struct{}
+	removedrules     map[int]struct{}
+	clearedrules     bool
 	done             bool
 	oldValue         func(context.Context) (*Connection, error)
 	predicates       []predicate.Connection
@@ -515,6 +518,60 @@ func (m *ConnectionMutation) ResetLibraries() {
 	m.removedlibraries = nil
 }
 
+// AddRuleIDs adds the "rules" edge to the Rule entity by ids.
+func (m *ConnectionMutation) AddRuleIDs(ids ...int) {
+	if m.rules == nil {
+		m.rules = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.rules[ids[i]] = struct{}{}
+	}
+}
+
+// ClearRules clears the "rules" edge to the Rule entity.
+func (m *ConnectionMutation) ClearRules() {
+	m.clearedrules = true
+}
+
+// RulesCleared reports if the "rules" edge to the Rule entity was cleared.
+func (m *ConnectionMutation) RulesCleared() bool {
+	return m.clearedrules
+}
+
+// RemoveRuleIDs removes the "rules" edge to the Rule entity by IDs.
+func (m *ConnectionMutation) RemoveRuleIDs(ids ...int) {
+	if m.removedrules == nil {
+		m.removedrules = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.rules, ids[i])
+		m.removedrules[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedRules returns the removed IDs of the "rules" edge to the Rule entity.
+func (m *ConnectionMutation) RemovedRulesIDs() (ids []int) {
+	for id := range m.removedrules {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// RulesIDs returns the "rules" edge IDs in the mutation.
+func (m *ConnectionMutation) RulesIDs() (ids []int) {
+	for id := range m.rules {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetRules resets all changes to the "rules" edge.
+func (m *ConnectionMutation) ResetRules() {
+	m.rules = nil
+	m.clearedrules = false
+	m.removedrules = nil
+}
+
 // Where appends a list predicates to the ConnectionMutation builder.
 func (m *ConnectionMutation) Where(ps ...predicate.Connection) {
 	m.predicates = append(m.predicates, ps...)
@@ -782,9 +839,12 @@ func (m *ConnectionMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ConnectionMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.libraries != nil {
 		edges = append(edges, connection.EdgeLibraries)
+	}
+	if m.rules != nil {
+		edges = append(edges, connection.EdgeRules)
 	}
 	return edges
 }
@@ -799,15 +859,24 @@ func (m *ConnectionMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case connection.EdgeRules:
+		ids := make([]ent.Value, 0, len(m.rules))
+		for id := range m.rules {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ConnectionMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.removedlibraries != nil {
 		edges = append(edges, connection.EdgeLibraries)
+	}
+	if m.removedrules != nil {
+		edges = append(edges, connection.EdgeRules)
 	}
 	return edges
 }
@@ -822,15 +891,24 @@ func (m *ConnectionMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case connection.EdgeRules:
+		ids := make([]ent.Value, 0, len(m.removedrules))
+		for id := range m.removedrules {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ConnectionMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedlibraries {
 		edges = append(edges, connection.EdgeLibraries)
+	}
+	if m.clearedrules {
+		edges = append(edges, connection.EdgeRules)
 	}
 	return edges
 }
@@ -841,6 +919,8 @@ func (m *ConnectionMutation) EdgeCleared(name string) bool {
 	switch name {
 	case connection.EdgeLibraries:
 		return m.clearedlibraries
+	case connection.EdgeRules:
+		return m.clearedrules
 	}
 	return false
 }
@@ -859,6 +939,9 @@ func (m *ConnectionMutation) ResetEdge(name string) error {
 	switch name {
 	case connection.EdgeLibraries:
 		m.ResetLibraries()
+		return nil
+	case connection.EdgeRules:
+		m.ResetRules()
 		return nil
 	}
 	return fmt.Errorf("unknown Connection edge %s", name)
@@ -1530,17 +1613,21 @@ func (m *LibraryMutation) ResetEdge(name string) error {
 // RuleMutation represents an operation that mutates the Rule nodes in the graph.
 type RuleMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *int
-	created_at    *time.Time
-	updated_at    *time.Time
-	name          *string
-	enabled       *bool
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*Rule, error)
-	predicates    []predicate.Rule
+	op                Op
+	typ               string
+	id                *int
+	created_at        *time.Time
+	updated_at        *time.Time
+	name              *string
+	enabled           *bool
+	action            *rule.Action
+	library_key       *string
+	clearedFields     map[string]struct{}
+	connection        *int
+	clearedconnection bool
+	done              bool
+	oldValue          func(context.Context) (*Rule, error)
+	predicates        []predicate.Rule
 }
 
 var _ ent.Mutation = (*RuleMutation)(nil)
@@ -1785,6 +1872,141 @@ func (m *RuleMutation) ResetEnabled() {
 	m.enabled = nil
 }
 
+// SetAction sets the "action" field.
+func (m *RuleMutation) SetAction(r rule.Action) {
+	m.action = &r
+}
+
+// Action returns the value of the "action" field in the mutation.
+func (m *RuleMutation) Action() (r rule.Action, exists bool) {
+	v := m.action
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAction returns the old "action" field's value of the Rule entity.
+// If the Rule object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RuleMutation) OldAction(ctx context.Context) (v rule.Action, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAction is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAction requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAction: %w", err)
+	}
+	return oldValue.Action, nil
+}
+
+// ResetAction resets all changes to the "action" field.
+func (m *RuleMutation) ResetAction() {
+	m.action = nil
+}
+
+// SetConnectionID sets the "connection_id" field.
+func (m *RuleMutation) SetConnectionID(i int) {
+	m.connection = &i
+}
+
+// ConnectionID returns the value of the "connection_id" field in the mutation.
+func (m *RuleMutation) ConnectionID() (r int, exists bool) {
+	v := m.connection
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldConnectionID returns the old "connection_id" field's value of the Rule entity.
+// If the Rule object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RuleMutation) OldConnectionID(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldConnectionID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldConnectionID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldConnectionID: %w", err)
+	}
+	return oldValue.ConnectionID, nil
+}
+
+// ResetConnectionID resets all changes to the "connection_id" field.
+func (m *RuleMutation) ResetConnectionID() {
+	m.connection = nil
+}
+
+// SetLibraryKey sets the "library_key" field.
+func (m *RuleMutation) SetLibraryKey(s string) {
+	m.library_key = &s
+}
+
+// LibraryKey returns the value of the "library_key" field in the mutation.
+func (m *RuleMutation) LibraryKey() (r string, exists bool) {
+	v := m.library_key
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLibraryKey returns the old "library_key" field's value of the Rule entity.
+// If the Rule object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RuleMutation) OldLibraryKey(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLibraryKey is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLibraryKey requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLibraryKey: %w", err)
+	}
+	return oldValue.LibraryKey, nil
+}
+
+// ResetLibraryKey resets all changes to the "library_key" field.
+func (m *RuleMutation) ResetLibraryKey() {
+	m.library_key = nil
+}
+
+// ClearConnection clears the "connection" edge to the Connection entity.
+func (m *RuleMutation) ClearConnection() {
+	m.clearedconnection = true
+	m.clearedFields[rule.FieldConnectionID] = struct{}{}
+}
+
+// ConnectionCleared reports if the "connection" edge to the Connection entity was cleared.
+func (m *RuleMutation) ConnectionCleared() bool {
+	return m.clearedconnection
+}
+
+// ConnectionIDs returns the "connection" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ConnectionID instead. It exists only for internal usage by the builders.
+func (m *RuleMutation) ConnectionIDs() (ids []int) {
+	if id := m.connection; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetConnection resets all changes to the "connection" edge.
+func (m *RuleMutation) ResetConnection() {
+	m.connection = nil
+	m.clearedconnection = false
+}
+
 // Where appends a list predicates to the RuleMutation builder.
 func (m *RuleMutation) Where(ps ...predicate.Rule) {
 	m.predicates = append(m.predicates, ps...)
@@ -1819,7 +2041,7 @@ func (m *RuleMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *RuleMutation) Fields() []string {
-	fields := make([]string, 0, 4)
+	fields := make([]string, 0, 7)
 	if m.created_at != nil {
 		fields = append(fields, rule.FieldCreatedAt)
 	}
@@ -1831,6 +2053,15 @@ func (m *RuleMutation) Fields() []string {
 	}
 	if m.enabled != nil {
 		fields = append(fields, rule.FieldEnabled)
+	}
+	if m.action != nil {
+		fields = append(fields, rule.FieldAction)
+	}
+	if m.connection != nil {
+		fields = append(fields, rule.FieldConnectionID)
+	}
+	if m.library_key != nil {
+		fields = append(fields, rule.FieldLibraryKey)
 	}
 	return fields
 }
@@ -1848,6 +2079,12 @@ func (m *RuleMutation) Field(name string) (ent.Value, bool) {
 		return m.Name()
 	case rule.FieldEnabled:
 		return m.Enabled()
+	case rule.FieldAction:
+		return m.Action()
+	case rule.FieldConnectionID:
+		return m.ConnectionID()
+	case rule.FieldLibraryKey:
+		return m.LibraryKey()
 	}
 	return nil, false
 }
@@ -1865,6 +2102,12 @@ func (m *RuleMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldName(ctx)
 	case rule.FieldEnabled:
 		return m.OldEnabled(ctx)
+	case rule.FieldAction:
+		return m.OldAction(ctx)
+	case rule.FieldConnectionID:
+		return m.OldConnectionID(ctx)
+	case rule.FieldLibraryKey:
+		return m.OldLibraryKey(ctx)
 	}
 	return nil, fmt.Errorf("unknown Rule field %s", name)
 }
@@ -1902,6 +2145,27 @@ func (m *RuleMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetEnabled(v)
 		return nil
+	case rule.FieldAction:
+		v, ok := value.(rule.Action)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAction(v)
+		return nil
+	case rule.FieldConnectionID:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetConnectionID(v)
+		return nil
+	case rule.FieldLibraryKey:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLibraryKey(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Rule field %s", name)
 }
@@ -1909,13 +2173,16 @@ func (m *RuleMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *RuleMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *RuleMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	}
 	return nil, false
 }
 
@@ -1963,25 +2230,43 @@ func (m *RuleMutation) ResetField(name string) error {
 	case rule.FieldEnabled:
 		m.ResetEnabled()
 		return nil
+	case rule.FieldAction:
+		m.ResetAction()
+		return nil
+	case rule.FieldConnectionID:
+		m.ResetConnectionID()
+		return nil
+	case rule.FieldLibraryKey:
+		m.ResetLibraryKey()
+		return nil
 	}
 	return fmt.Errorf("unknown Rule field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *RuleMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.connection != nil {
+		edges = append(edges, rule.EdgeConnection)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *RuleMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case rule.EdgeConnection:
+		if id := m.connection; id != nil {
+			return []ent.Value{*id}
+		}
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *RuleMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
 	return edges
 }
 
@@ -1993,24 +2278,41 @@ func (m *RuleMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *RuleMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.clearedconnection {
+		edges = append(edges, rule.EdgeConnection)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *RuleMutation) EdgeCleared(name string) bool {
+	switch name {
+	case rule.EdgeConnection:
+		return m.clearedconnection
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *RuleMutation) ClearEdge(name string) error {
+	switch name {
+	case rule.EdgeConnection:
+		m.ClearConnection()
+		return nil
+	}
 	return fmt.Errorf("unknown Rule unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *RuleMutation) ResetEdge(name string) error {
+	switch name {
+	case rule.EdgeConnection:
+		m.ResetConnection()
+		return nil
+	}
 	return fmt.Errorf("unknown Rule edge %s", name)
 }

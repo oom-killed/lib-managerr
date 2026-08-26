@@ -253,13 +253,47 @@ online/offline, since neither would be true yet. The status badge itself (`Statu
 presentational only — online/offline/checking plus a label — consistent with the low-level-component rule.
 
 **Rules** (`/rules`, root-level nav, first added as an empty-state shell) is a library cleanup automation
-feature, built incrementally: the `Rule` entity (`backend/ent/schema/rule.go`) deliberately only has
-`name`/`enabled` for now — no condition, action, or library-scope fields yet, since those depend on an
-execution engine that doesn't exist yet and guessing that shape before it does would likely need reworking.
-Full CRUD (`backend/internal/api/rules.go`, `GET/POST /api/rules`, `PUT/DELETE /api/rules/{id}`) exists even
-though nothing executes a rule yet, matching how `Connection` CRUD existed before Plex/Radarr/Sonarr/Seerr
-did anything useful with it. Unlike `Connection`, `Rule` has a `DELETE` endpoint — connections never gained
-one since it was never asked for, not because of some rule against it.
+feature, built incrementally: the `Rule` entity (`backend/ent/schema/rule.go`) deliberately only had
+`name`/`enabled` at first — condition/library-scope fields are still a later increment, since those depend
+on an execution engine that doesn't exist yet and guessing that shape before it does would likely need
+reworking. Full CRUD (`backend/internal/api/rules.go`, `GET/POST /api/rules`, `PUT/DELETE /api/rules/{id}`)
+exists even though nothing executes a rule yet, matching how `Connection` CRUD existed before
+Plex/Radarr/Sonarr/Seerr did anything useful with it. Unlike `Connection`, `Rule` has a `DELETE` endpoint —
+connections never gained one since it was never asked for, not because of some rule against it.
+
+`Rule.action` (added next) models what a rule would do, ahead of the condition/scope fields and execution
+engine that decide *when* it runs — the five values (`change_quality_and_search`, `delete`, `do_nothing`,
+`unmonitor_and_delete_files`, `unmonitor_and_keep_files`) match Maintainerr's own action set for Radarr
+cleanup, since that's a reasonable action vocabulary to start from even though this project isn't a port of
+it. Implicitly Radarr-scoped for now (no `target`/`service` field) since Radarr is the only thing being
+acted on — revisit if a non-Radarr action is ever needed. Defaults to `do_nothing` (both the ent schema
+default and `RuleForm.tsx`'s initial state) so an unconfigured rule is inert rather than silently deleting
+things. `PUT /api/rules/{id}` leaves `action` unchanged when the field is omitted from the request body,
+same "omit means no change" convention as `Connection`'s token field. The option list/label mapping lives in
+`web/src/routes/rules/ruleActions.ts` (`RULE_ACTION_OPTIONS`), the same registry shape as
+`CONNECTION_TYPE_OPTIONS`.
+
+**`Rule.connection_id`/`library_key`** (added next) identify the library a rule scans the same way the rest
+of the app identifies one — connection id + the remote library key — rather than through the `Library`
+entity, since nothing persists Plex library sections into it yet (see the Database section above). The edge
+is a real ent `edge.From(...).Field("connection_id")` (required, so the FK is enforced — an unknown
+`connectionId` is rejected as a `400`), with `StructTag` overrides on both fields so the JSON API exposes
+`connectionId`/`libraryKey` (camelCase, matching the rest of the frontend's custom fields) instead of ent's
+default snake_case. `RuleForm.tsx` reuses the exact connection/library selector pattern from
+`Libraries.tsx` (filter to `LIBRARY_CAPABLE_CONNECTION_TYPES`, default to the first once each resource
+loads) rather than introducing a second implementation of the same picker.
+
+**Action options are filtered by the selected library's media type** (`web/src/routes/rules/ruleActions.ts`)
+— purely a frontend concern, no backend validation of the pairing (the `Rule.action` enum doesn't know about
+media types at all). Each `RuleActionOption` carries an optional `mediaTypes` list; every action except
+`do_nothing` is `["movie"]`-only since they're all Radarr actions and Radarr only tracks movies —
+`do_nothing` has no restriction (applies to any library) since it isn't tied to a service.
+`ruleActionOptionsFor(mediaType)` returns every option when `mediaType` is `undefined` (no library resolved
+yet, e.g. still loading) so the select isn't empty during that window. `RuleForm.tsx` resolves the selected
+library's `type` from the already-fetched libraries list (no extra request) and resets `action` to the first
+still-valid option whenever that type changes what's applicable — e.g. switching a rule from a movie library
+with action `delete` to a show library resets it to `do_nothing`, since `delete` wouldn't mean anything
+there.
 
 ## Logging
 

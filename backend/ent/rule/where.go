@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/oom-killed/lib-managerr/ent/predicate"
 )
 
@@ -72,6 +73,16 @@ func Name(v string) predicate.Rule {
 // Enabled applies equality check predicate on the "enabled" field. It's identical to EnabledEQ.
 func Enabled(v bool) predicate.Rule {
 	return predicate.Rule(sql.FieldEQ(FieldEnabled, v))
+}
+
+// ConnectionID applies equality check predicate on the "connection_id" field. It's identical to ConnectionIDEQ.
+func ConnectionID(v int) predicate.Rule {
+	return predicate.Rule(sql.FieldEQ(FieldConnectionID, v))
+}
+
+// LibraryKey applies equality check predicate on the "library_key" field. It's identical to LibraryKeyEQ.
+func LibraryKey(v string) predicate.Rule {
+	return predicate.Rule(sql.FieldEQ(FieldLibraryKey, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -227,6 +238,134 @@ func EnabledEQ(v bool) predicate.Rule {
 // EnabledNEQ applies the NEQ predicate on the "enabled" field.
 func EnabledNEQ(v bool) predicate.Rule {
 	return predicate.Rule(sql.FieldNEQ(FieldEnabled, v))
+}
+
+// ActionEQ applies the EQ predicate on the "action" field.
+func ActionEQ(v Action) predicate.Rule {
+	return predicate.Rule(sql.FieldEQ(FieldAction, v))
+}
+
+// ActionNEQ applies the NEQ predicate on the "action" field.
+func ActionNEQ(v Action) predicate.Rule {
+	return predicate.Rule(sql.FieldNEQ(FieldAction, v))
+}
+
+// ActionIn applies the In predicate on the "action" field.
+func ActionIn(vs ...Action) predicate.Rule {
+	return predicate.Rule(sql.FieldIn(FieldAction, vs...))
+}
+
+// ActionNotIn applies the NotIn predicate on the "action" field.
+func ActionNotIn(vs ...Action) predicate.Rule {
+	return predicate.Rule(sql.FieldNotIn(FieldAction, vs...))
+}
+
+// ConnectionIDEQ applies the EQ predicate on the "connection_id" field.
+func ConnectionIDEQ(v int) predicate.Rule {
+	return predicate.Rule(sql.FieldEQ(FieldConnectionID, v))
+}
+
+// ConnectionIDNEQ applies the NEQ predicate on the "connection_id" field.
+func ConnectionIDNEQ(v int) predicate.Rule {
+	return predicate.Rule(sql.FieldNEQ(FieldConnectionID, v))
+}
+
+// ConnectionIDIn applies the In predicate on the "connection_id" field.
+func ConnectionIDIn(vs ...int) predicate.Rule {
+	return predicate.Rule(sql.FieldIn(FieldConnectionID, vs...))
+}
+
+// ConnectionIDNotIn applies the NotIn predicate on the "connection_id" field.
+func ConnectionIDNotIn(vs ...int) predicate.Rule {
+	return predicate.Rule(sql.FieldNotIn(FieldConnectionID, vs...))
+}
+
+// LibraryKeyEQ applies the EQ predicate on the "library_key" field.
+func LibraryKeyEQ(v string) predicate.Rule {
+	return predicate.Rule(sql.FieldEQ(FieldLibraryKey, v))
+}
+
+// LibraryKeyNEQ applies the NEQ predicate on the "library_key" field.
+func LibraryKeyNEQ(v string) predicate.Rule {
+	return predicate.Rule(sql.FieldNEQ(FieldLibraryKey, v))
+}
+
+// LibraryKeyIn applies the In predicate on the "library_key" field.
+func LibraryKeyIn(vs ...string) predicate.Rule {
+	return predicate.Rule(sql.FieldIn(FieldLibraryKey, vs...))
+}
+
+// LibraryKeyNotIn applies the NotIn predicate on the "library_key" field.
+func LibraryKeyNotIn(vs ...string) predicate.Rule {
+	return predicate.Rule(sql.FieldNotIn(FieldLibraryKey, vs...))
+}
+
+// LibraryKeyGT applies the GT predicate on the "library_key" field.
+func LibraryKeyGT(v string) predicate.Rule {
+	return predicate.Rule(sql.FieldGT(FieldLibraryKey, v))
+}
+
+// LibraryKeyGTE applies the GTE predicate on the "library_key" field.
+func LibraryKeyGTE(v string) predicate.Rule {
+	return predicate.Rule(sql.FieldGTE(FieldLibraryKey, v))
+}
+
+// LibraryKeyLT applies the LT predicate on the "library_key" field.
+func LibraryKeyLT(v string) predicate.Rule {
+	return predicate.Rule(sql.FieldLT(FieldLibraryKey, v))
+}
+
+// LibraryKeyLTE applies the LTE predicate on the "library_key" field.
+func LibraryKeyLTE(v string) predicate.Rule {
+	return predicate.Rule(sql.FieldLTE(FieldLibraryKey, v))
+}
+
+// LibraryKeyContains applies the Contains predicate on the "library_key" field.
+func LibraryKeyContains(v string) predicate.Rule {
+	return predicate.Rule(sql.FieldContains(FieldLibraryKey, v))
+}
+
+// LibraryKeyHasPrefix applies the HasPrefix predicate on the "library_key" field.
+func LibraryKeyHasPrefix(v string) predicate.Rule {
+	return predicate.Rule(sql.FieldHasPrefix(FieldLibraryKey, v))
+}
+
+// LibraryKeyHasSuffix applies the HasSuffix predicate on the "library_key" field.
+func LibraryKeyHasSuffix(v string) predicate.Rule {
+	return predicate.Rule(sql.FieldHasSuffix(FieldLibraryKey, v))
+}
+
+// LibraryKeyEqualFold applies the EqualFold predicate on the "library_key" field.
+func LibraryKeyEqualFold(v string) predicate.Rule {
+	return predicate.Rule(sql.FieldEqualFold(FieldLibraryKey, v))
+}
+
+// LibraryKeyContainsFold applies the ContainsFold predicate on the "library_key" field.
+func LibraryKeyContainsFold(v string) predicate.Rule {
+	return predicate.Rule(sql.FieldContainsFold(FieldLibraryKey, v))
+}
+
+// HasConnection applies the HasEdge predicate on the "connection" edge.
+func HasConnection() predicate.Rule {
+	return predicate.Rule(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, ConnectionTable, ConnectionColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasConnectionWith applies the HasEdge predicate on the "connection" edge with a given conditions (other predicates).
+func HasConnectionWith(preds ...predicate.Connection) predicate.Rule {
+	return predicate.Rule(func(s *sql.Selector) {
+		step := newConnectionStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
 }
 
 // And groups predicates with the AND operator between them.

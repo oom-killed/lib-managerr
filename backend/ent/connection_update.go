@@ -14,6 +14,7 @@ import (
 	"github.com/oom-killed/lib-managerr/ent/connection"
 	"github.com/oom-killed/lib-managerr/ent/library"
 	"github.com/oom-killed/lib-managerr/ent/predicate"
+	"github.com/oom-killed/lib-managerr/ent/rule"
 )
 
 // ConnectionUpdate is the builder for updating Connection entities.
@@ -141,6 +142,21 @@ func (_u *ConnectionUpdate) AddLibraries(v ...*Library) *ConnectionUpdate {
 	return _u.AddLibraryIDs(ids...)
 }
 
+// AddRuleIDs adds the "rules" edge to the Rule entity by IDs.
+func (_u *ConnectionUpdate) AddRuleIDs(ids ...int) *ConnectionUpdate {
+	_u.mutation.AddRuleIDs(ids...)
+	return _u
+}
+
+// AddRules adds the "rules" edges to the Rule entity.
+func (_u *ConnectionUpdate) AddRules(v ...*Rule) *ConnectionUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddRuleIDs(ids...)
+}
+
 // Mutation returns the ConnectionMutation object of the builder.
 func (_u *ConnectionUpdate) Mutation() *ConnectionMutation {
 	return _u.mutation
@@ -165,6 +181,27 @@ func (_u *ConnectionUpdate) RemoveLibraries(v ...*Library) *ConnectionUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveLibraryIDs(ids...)
+}
+
+// ClearRules clears all "rules" edges to the Rule entity.
+func (_u *ConnectionUpdate) ClearRules() *ConnectionUpdate {
+	_u.mutation.ClearRules()
+	return _u
+}
+
+// RemoveRuleIDs removes the "rules" edge to Rule entities by IDs.
+func (_u *ConnectionUpdate) RemoveRuleIDs(ids ...int) *ConnectionUpdate {
+	_u.mutation.RemoveRuleIDs(ids...)
+	return _u
+}
+
+// RemoveRules removes "rules" edges to Rule entities.
+func (_u *ConnectionUpdate) RemoveRules(v ...*Rule) *ConnectionUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveRuleIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -314,6 +351,51 @@ func (_u *ConnectionUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.RulesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   connection.RulesTable,
+			Columns: []string{connection.RulesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(rule.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedRulesIDs(); len(nodes) > 0 && !_u.mutation.RulesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   connection.RulesTable,
+			Columns: []string{connection.RulesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(rule.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RulesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   connection.RulesTable,
+			Columns: []string{connection.RulesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(rule.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{connection.Label}
@@ -446,6 +528,21 @@ func (_u *ConnectionUpdateOne) AddLibraries(v ...*Library) *ConnectionUpdateOne 
 	return _u.AddLibraryIDs(ids...)
 }
 
+// AddRuleIDs adds the "rules" edge to the Rule entity by IDs.
+func (_u *ConnectionUpdateOne) AddRuleIDs(ids ...int) *ConnectionUpdateOne {
+	_u.mutation.AddRuleIDs(ids...)
+	return _u
+}
+
+// AddRules adds the "rules" edges to the Rule entity.
+func (_u *ConnectionUpdateOne) AddRules(v ...*Rule) *ConnectionUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddRuleIDs(ids...)
+}
+
 // Mutation returns the ConnectionMutation object of the builder.
 func (_u *ConnectionUpdateOne) Mutation() *ConnectionMutation {
 	return _u.mutation
@@ -470,6 +567,27 @@ func (_u *ConnectionUpdateOne) RemoveLibraries(v ...*Library) *ConnectionUpdateO
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveLibraryIDs(ids...)
+}
+
+// ClearRules clears all "rules" edges to the Rule entity.
+func (_u *ConnectionUpdateOne) ClearRules() *ConnectionUpdateOne {
+	_u.mutation.ClearRules()
+	return _u
+}
+
+// RemoveRuleIDs removes the "rules" edge to Rule entities by IDs.
+func (_u *ConnectionUpdateOne) RemoveRuleIDs(ids ...int) *ConnectionUpdateOne {
+	_u.mutation.RemoveRuleIDs(ids...)
+	return _u
+}
+
+// RemoveRules removes "rules" edges to Rule entities.
+func (_u *ConnectionUpdateOne) RemoveRules(v ...*Rule) *ConnectionUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveRuleIDs(ids...)
 }
 
 // Where appends a list predicates to the ConnectionUpdate builder.
@@ -642,6 +760,51 @@ func (_u *ConnectionUpdateOne) sqlSave(ctx context.Context) (_node *Connection, 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(library.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.RulesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   connection.RulesTable,
+			Columns: []string{connection.RulesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(rule.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedRulesIDs(); len(nodes) > 0 && !_u.mutation.RulesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   connection.RulesTable,
+			Columns: []string{connection.RulesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(rule.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RulesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   connection.RulesTable,
+			Columns: []string{connection.RulesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(rule.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

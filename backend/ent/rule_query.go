@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/oom-killed/lib-managerr/ent/connection"
 	"github.com/oom-killed/lib-managerr/ent/predicate"
 	"github.com/oom-killed/lib-managerr/ent/rule"
 )
@@ -18,10 +19,11 @@ import (
 // RuleQuery is the builder for querying Rule entities.
 type RuleQuery struct {
 	config
-	ctx        *QueryContext
-	order      []rule.OrderOption
-	inters     []Interceptor
-	predicates []predicate.Rule
+	ctx            *QueryContext
+	order          []rule.OrderOption
+	inters         []Interceptor
+	predicates     []predicate.Rule
+	withConnection *ConnectionQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -56,6 +58,28 @@ func (_q *RuleQuery) Unique(unique bool) *RuleQuery {
 func (_q *RuleQuery) Order(o ...rule.OrderOption) *RuleQuery {
 	_q.order = append(_q.order, o...)
 	return _q
+}
+
+// QueryConnection chains the current query on the "connection" edge.
+func (_q *RuleQuery) QueryConnection() *ConnectionQuery {
+	query := (&ConnectionClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(rule.Table, rule.FieldID, selector),
+			sqlgraph.To(connection.Table, connection.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, rule.ConnectionTable, rule.ConnectionColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // First returns the first Rule entity from the query.
@@ -245,15 +269,27 @@ func (_q *RuleQuery) Clone() *RuleQuery {
 		return nil
 	}
 	return &RuleQuery{
-		config:     _q.config,
-		ctx:        _q.ctx.Clone(),
-		order:      append([]rule.OrderOption{}, _q.order...),
-		inters:     append([]Interceptor{}, _q.inters...),
-		predicates: append([]predicate.Rule{}, _q.predicates...),
+		config:         _q.config,
+		ctx:            _q.ctx.Clone(),
+		order:          append([]rule.OrderOption{}, _q.order...),
+		inters:         append([]Interceptor{}, _q.inters...),
+		predicates:     append([]predicate.Rule{}, _q.predicates...),
+		withConnection: _q.withConnection.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
 	}
+}
+
+// WithConnection tells the query-builder to eager-load the nodes that are connected to
+// the "connection" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *RuleQuery) WithConnection(opts ...func(*ConnectionQuery)) *RuleQuery {
+	query := (&ConnectionClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withConnection = query
+	return _q
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -332,8 +368,11 @@ func (_q *RuleQuery) prepareQuery(ctx context.Context) error {
 
 func (_q *RuleQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Rule, error) {
 	var (
-		nodes = []*Rule{}
-		_spec = _q.querySpec()
+		nodes       = []*Rule{}
+		_spec       = _q.querySpec()
+		loadedTypes = [1]bool{
+			_q.withConnection != nil,
+		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Rule).scanValues(nil, columns)
@@ -341,6 +380,7 @@ func (_q *RuleQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Rule, e
 	_spec.Assign = func(columns []string, values []any) error {
 		node := &Rule{config: _q.config}
 		nodes = append(nodes, node)
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	for i := range hooks {
@@ -352,7 +392,43 @@ func (_q *RuleQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Rule, e
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := _q.withConnection; query != nil {
+		if err := _q.loadConnection(ctx, query, nodes, nil,
+			func(n *Rule, e *Connection) { n.Edges.Connection = e }); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
+}
+
+func (_q *RuleQuery) loadConnection(ctx context.Context, query *ConnectionQuery, nodes []*Rule, init func(*Rule), assign func(*Rule, *Connection)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*Rule)
+	for i := range nodes {
+		fk := nodes[i].ConnectionID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(connection.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "connection_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
 }
 
 func (_q *RuleQuery) sqlCount(ctx context.Context) (int, error) {
@@ -379,6 +455,9 @@ func (_q *RuleQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != rule.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if _q.withConnection != nil {
+			_spec.Node.AddColumnOnce(rule.FieldConnectionID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

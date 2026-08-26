@@ -56,6 +56,16 @@ export type Dict = {
 		fields: {
 			name: string;
 			enabled: string;
+			action: string;
+			connection: string;
+			library: string;
+		};
+		actions: {
+			changeQualityAndSearch: string;
+			delete: string;
+			doNothing: string;
+			unmonitorAndDeleteFiles: string;
+			unmonitorAndKeepFiles: string;
 		};
 	};
 	settings: {
@@ -146,6 +156,16 @@ export const dict: Dict = {
 		fields: {
 			name: "Name",
 			enabled: "Enabled",
+			action: "Action",
+			connection: "Connection",
+			library: "Library",
+		},
+		actions: {
+			changeQualityAndSearch: "Change quality profile and search",
+			delete: "Delete",
+			doNothing: "Do nothing",
+			unmonitorAndDeleteFiles: "Unmonitor and delete files",
+			unmonitorAndKeepFiles: "Unmonitor and keep files",
 		},
 	},
 	settings: {

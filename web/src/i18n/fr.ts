@@ -60,6 +60,16 @@ export const dict: Dict = {
 		fields: {
 			name: "Nom",
 			enabled: "Activée",
+			action: "Action",
+			connection: "Connexion",
+			library: "Bibliothèque",
+		},
+		actions: {
+			changeQualityAndSearch: "Changer le profil de qualité et rechercher",
+			delete: "Supprimer",
+			doNothing: "Ne rien faire",
+			unmonitorAndDeleteFiles: "Ne plus surveiller et supprimer les fichiers",
+			unmonitorAndKeepFiles: "Ne plus surveiller et conserver les fichiers",
 		},
 	},
 	settings: {

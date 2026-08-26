@@ -100,4 +100,8 @@ func init() {
 	ruleDescEnabled := ruleFields[1].Descriptor()
 	// rule.DefaultEnabled holds the default value on creation for the enabled field.
 	rule.DefaultEnabled = ruleDescEnabled.Default.(bool)
+	// ruleDescLibraryKey is the schema descriptor for library_key field.
+	ruleDescLibraryKey := ruleFields[4].Descriptor()
+	// rule.LibraryKeyValidator is a validator for the "library_key" field. It is called by the builders before save.
+	rule.LibraryKeyValidator = ruleDescLibraryKey.Validators[0].(func(string) error)
 }

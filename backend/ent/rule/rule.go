@@ -3,9 +3,11 @@
 package rule
 
 import (
+	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 const (
@@ -21,8 +23,23 @@ const (
 	FieldName = "name"
 	// FieldEnabled holds the string denoting the enabled field in the database.
 	FieldEnabled = "enabled"
+	// FieldAction holds the string denoting the action field in the database.
+	FieldAction = "action"
+	// FieldConnectionID holds the string denoting the connection_id field in the database.
+	FieldConnectionID = "connection_id"
+	// FieldLibraryKey holds the string denoting the library_key field in the database.
+	FieldLibraryKey = "library_key"
+	// EdgeConnection holds the string denoting the connection edge name in mutations.
+	EdgeConnection = "connection"
 	// Table holds the table name of the rule in the database.
 	Table = "rules"
+	// ConnectionTable is the table that holds the connection relation/edge.
+	ConnectionTable = "rules"
+	// ConnectionInverseTable is the table name for the Connection entity.
+	// It exists in this package in order to avoid circular dependency with the "connection" package.
+	ConnectionInverseTable = "connections"
+	// ConnectionColumn is the table column denoting the connection relation/edge.
+	ConnectionColumn = "connection_id"
 )
 
 // Columns holds all SQL columns for rule fields.
@@ -32,6 +49,9 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldName,
 	FieldEnabled,
+	FieldAction,
+	FieldConnectionID,
+	FieldLibraryKey,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -55,7 +75,38 @@ var (
 	NameValidator func(string) error
 	// DefaultEnabled holds the default value on creation for the "enabled" field.
 	DefaultEnabled bool
+	// LibraryKeyValidator is a validator for the "library_key" field. It is called by the builders before save.
+	LibraryKeyValidator func(string) error
 )
+
+// Action defines the type for the "action" enum field.
+type Action string
+
+// ActionDoNothing is the default value of the Action enum.
+const DefaultAction = ActionDoNothing
+
+// Action values.
+const (
+	ActionChangeQualityAndSearch  Action = "change_quality_and_search"
+	ActionDelete                  Action = "delete"
+	ActionDoNothing               Action = "do_nothing"
+	ActionUnmonitorAndDeleteFiles Action = "unmonitor_and_delete_files"
+	ActionUnmonitorAndKeepFiles   Action = "unmonitor_and_keep_files"
+)
+
+func (a Action) String() string {
+	return string(a)
+}
+
+// ActionValidator is a validator for the "action" field enum values. It is called by the builders before save.
+func ActionValidator(a Action) error {
+	switch a {
+	case ActionChangeQualityAndSearch, ActionDelete, ActionDoNothing, ActionUnmonitorAndDeleteFiles, ActionUnmonitorAndKeepFiles:
+		return nil
+	default:
+		return fmt.Errorf("rule: invalid enum value for action field: %q", a)
+	}
+}
 
 // OrderOption defines the ordering options for the Rule queries.
 type OrderOption func(*sql.Selector)
@@ -83,4 +134,33 @@ func ByName(opts ...sql.OrderTermOption) OrderOption {
 // ByEnabled orders the results by the enabled field.
 func ByEnabled(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldEnabled, opts...).ToFunc()
+}
+
+// ByAction orders the results by the action field.
+func ByAction(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAction, opts...).ToFunc()
+}
+
+// ByConnectionID orders the results by the connection_id field.
+func ByConnectionID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldConnectionID, opts...).ToFunc()
+}
+
+// ByLibraryKey orders the results by the library_key field.
+func ByLibraryKey(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLibraryKey, opts...).ToFunc()
+}
+
+// ByConnectionField orders the results by connection field.
+func ByConnectionField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newConnectionStep(), sql.OrderByField(field, opts...))
+	}
+}
+func newConnectionStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ConnectionInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, ConnectionTable, ConnectionColumn),
+	)
 }

@@ -1,12 +1,31 @@
+// Radarr's available cleanup actions (matches Maintainerr's option set).
+// Namespaced under "radarr" implicitly for now since it's the only
+// target — revisit if a non-Radarr action type is ever added.
+export type RuleAction =
+	| "change_quality_and_search"
+	| "delete"
+	| "do_nothing"
+	| "unmonitor_and_delete_files"
+	| "unmonitor_and_keep_files";
+
 export type Rule = {
 	id: number;
 	name: string;
 	enabled: boolean;
+	action: RuleAction;
+	// The library this rule scans, identified the same way the rest of the
+	// app identifies a library (connection id + remote library key) rather
+	// than through the Library entity, which nothing persists into yet.
+	connectionId: number;
+	libraryKey: string;
 };
 
 export type RuleInput = {
 	name: string;
 	enabled: boolean;
+	action: RuleAction;
+	connectionId: number;
+	libraryKey: string;
 };
 
 export async function fetchRules(): Promise<Rule[]> {

@@ -7,12 +7,16 @@ import (
 	"strconv"
 
 	"github.com/oom-killed/lib-managerr/ent"
+	"github.com/oom-killed/lib-managerr/ent/rule"
 	"github.com/oom-killed/lib-managerr/internal/logging"
 )
 
 type ruleInput struct {
-	Name    string `json:"name"`
-	Enabled bool   `json:"enabled"`
+	Name         string      `json:"name"`
+	Enabled      bool        `json:"enabled"`
+	Action       rule.Action `json:"action"`
+	ConnectionID int         `json:"connectionId"`
+	LibraryKey   string      `json:"libraryKey"`
 }
 
 // RegisterRuleRoutes wires the Rule endpoints onto mux.
@@ -34,17 +38,22 @@ func RegisterRuleRoutes(mux *http.ServeMux, client *ent.Client) {
 			return
 		}
 
-		rule, err := client.Rule.Create().
+		create := client.Rule.Create().
 			SetName(in.Name).
 			SetEnabled(in.Enabled).
-			Save(r.Context())
+			SetConnectionID(in.ConnectionID).
+			SetLibraryKey(in.LibraryKey)
+		if in.Action != "" {
+			create = create.SetAction(in.Action)
+		}
+		created, err := create.Save(r.Context())
 		if err != nil {
 			logging.FromContext(r.Context()).Warn("create rule failed", "error", err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		logging.FromContext(r.Context()).Info("rule created", "rule_id", rule.ID)
-		writeJSON(w, http.StatusCreated, rule)
+		logging.FromContext(r.Context()).Info("rule created", "rule_id", created.ID)
+		writeJSON(w, http.StatusCreated, created)
 	})
 
 	mux.HandleFunc("PUT /api/rules/{id}", func(w http.ResponseWriter, r *http.Request) {
@@ -60,10 +69,15 @@ func RegisterRuleRoutes(mux *http.ServeMux, client *ent.Client) {
 			return
 		}
 
-		rule, err := client.Rule.UpdateOneID(id).
+		update := client.Rule.UpdateOneID(id).
 			SetName(in.Name).
 			SetEnabled(in.Enabled).
-			Save(r.Context())
+			SetConnectionID(in.ConnectionID).
+			SetLibraryKey(in.LibraryKey)
+		if in.Action != "" {
+			update = update.SetAction(in.Action)
+		}
+		updated, err := update.Save(r.Context())
 		if err != nil {
 			logger := logging.FromContext(r.Context()).With("rule_id", id)
 			if ent.IsNotFound(err) {
@@ -81,8 +95,8 @@ func RegisterRuleRoutes(mux *http.ServeMux, client *ent.Client) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		logging.FromContext(r.Context()).Info("rule updated", "rule_id", rule.ID)
-		writeJSON(w, http.StatusOK, rule)
+		logging.FromContext(r.Context()).Info("rule updated", "rule_id", updated.ID)
+		writeJSON(w, http.StatusOK, updated)
 	})
 
 	mux.HandleFunc("DELETE /api/rules/{id}", func(w http.ResponseWriter, r *http.Request) {

@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/oom-killed/lib-managerr/ent/connection"
 	"github.com/oom-killed/lib-managerr/ent/library"
+	"github.com/oom-killed/lib-managerr/ent/rule"
 )
 
 // ConnectionCreate is the builder for creating a Connection entity.
@@ -106,6 +107,21 @@ func (_c *ConnectionCreate) AddLibraries(v ...*Library) *ConnectionCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddLibraryIDs(ids...)
+}
+
+// AddRuleIDs adds the "rules" edge to the Rule entity by IDs.
+func (_c *ConnectionCreate) AddRuleIDs(ids ...int) *ConnectionCreate {
+	_c.mutation.AddRuleIDs(ids...)
+	return _c
+}
+
+// AddRules adds the "rules" edges to the Rule entity.
+func (_c *ConnectionCreate) AddRules(v ...*Rule) *ConnectionCreate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddRuleIDs(ids...)
 }
 
 // Mutation returns the ConnectionMutation object of the builder.
@@ -275,6 +291,22 @@ func (_c *ConnectionCreate) createSpec() (*Connection, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(library.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.RulesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   connection.RulesTable,
+			Columns: []string{connection.RulesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(rule.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

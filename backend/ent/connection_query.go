@@ -15,6 +15,7 @@ import (
 	"github.com/oom-killed/lib-managerr/ent/connection"
 	"github.com/oom-killed/lib-managerr/ent/library"
 	"github.com/oom-killed/lib-managerr/ent/predicate"
+	"github.com/oom-killed/lib-managerr/ent/rule"
 )
 
 // ConnectionQuery is the builder for querying Connection entities.
@@ -25,6 +26,7 @@ type ConnectionQuery struct {
 	inters        []Interceptor
 	predicates    []predicate.Connection
 	withLibraries *LibraryQuery
+	withRules     *RuleQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -76,6 +78,28 @@ func (_q *ConnectionQuery) QueryLibraries() *LibraryQuery {
 			sqlgraph.From(connection.Table, connection.FieldID, selector),
 			sqlgraph.To(library.Table, library.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, connection.LibrariesTable, connection.LibrariesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryRules chains the current query on the "rules" edge.
+func (_q *ConnectionQuery) QueryRules() *RuleQuery {
+	query := (&RuleClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(connection.Table, connection.FieldID, selector),
+			sqlgraph.To(rule.Table, rule.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, connection.RulesTable, connection.RulesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -276,6 +300,7 @@ func (_q *ConnectionQuery) Clone() *ConnectionQuery {
 		inters:        append([]Interceptor{}, _q.inters...),
 		predicates:    append([]predicate.Connection{}, _q.predicates...),
 		withLibraries: _q.withLibraries.Clone(),
+		withRules:     _q.withRules.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -290,6 +315,17 @@ func (_q *ConnectionQuery) WithLibraries(opts ...func(*LibraryQuery)) *Connectio
 		opt(query)
 	}
 	_q.withLibraries = query
+	return _q
+}
+
+// WithRules tells the query-builder to eager-load the nodes that are connected to
+// the "rules" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ConnectionQuery) WithRules(opts ...func(*RuleQuery)) *ConnectionQuery {
+	query := (&RuleClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withRules = query
 	return _q
 }
 
@@ -371,8 +407,9 @@ func (_q *ConnectionQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*C
 	var (
 		nodes       = []*Connection{}
 		_spec       = _q.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			_q.withLibraries != nil,
+			_q.withRules != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -397,6 +434,13 @@ func (_q *ConnectionQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*C
 		if err := _q.loadLibraries(ctx, query, nodes,
 			func(n *Connection) { n.Edges.Libraries = []*Library{} },
 			func(n *Connection, e *Library) { n.Edges.Libraries = append(n.Edges.Libraries, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withRules; query != nil {
+		if err := _q.loadRules(ctx, query, nodes,
+			func(n *Connection) { n.Edges.Rules = []*Rule{} },
+			func(n *Connection, e *Rule) { n.Edges.Rules = append(n.Edges.Rules, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -429,6 +473,36 @@ func (_q *ConnectionQuery) loadLibraries(ctx context.Context, query *LibraryQuer
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "connection_libraries" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *ConnectionQuery) loadRules(ctx context.Context, query *RuleQuery, nodes []*Connection, init func(*Connection), assign func(*Connection, *Rule)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Connection)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(rule.FieldConnectionID)
+	}
+	query.Where(predicate.Rule(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(connection.RulesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ConnectionID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "connection_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}
