@@ -238,6 +238,20 @@ picker filters to `LIBRARY_CAPABLE_CONNECTION_TYPES` (`web/src/api/connections.t
 so a Radarr connection never shows up somewhere it can't be browsed. Extend that list, not the picker's
 logic, when Jellyfin/Emby support lands.
 
+**Connection health status** (shown on the Dashboard) is checked in the background, not live per-request —
+`backend/internal/api/health.go`'s `StartHealthChecker` runs a ticker (interval set by
+`CONNECTION_HEALTH_INTERVAL`, a Go duration string like `"60s"`, default `60s`, same "common setting via env
+var" pattern as `LOG_LEVEL`/`LOG_FORMAT`) that re-tests every `Connection` via the same `testConnectionType`
+dispatcher the manual Test Connection button uses, storing each result (`ok`/`error`/`checkedAt`) in an
+in-memory `StatusStore` keyed by connection id. `GET /api/connections/status` is a pure read from that
+store — hitting it never triggers a live test, so the endpoint stays cheap regardless of how often the
+frontend polls it. The Dashboard's `ConnectionsStatus` component (`web/src/routes/Dashboard.tsx`) polls it
+every 45s, a fixed interval shorter than the backend's 60s default (not dynamically derived from it — that
+would need its own round-trip just to learn a config value). A connection with no status yet (right after
+startup, before the first check cycle completes) renders as "Checking..." rather than defaulting to
+online/offline, since neither would be true yet. The status badge itself (`StatusBadge`, `packages/ui`) is
+presentational only — online/offline/checking plus a label — consistent with the low-level-component rule.
+
 ## Logging
 
 Built on the stdlib `log/slog` — no logging dependency. `backend/internal/logging.New()` builds the logger

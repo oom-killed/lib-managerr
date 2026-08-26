@@ -108,6 +108,24 @@ export async function testExistingConnection(
 	return res.json();
 }
 
+export type ConnectionStatus = {
+	id: number;
+	ok: boolean;
+	error?: string;
+	checkedAt: string;
+};
+
+// Backed by an in-memory store refreshed periodically by the backend
+// (CONNECTION_HEALTH_INTERVAL, default 60s) — this never triggers a live
+// test itself, it just reads the last check's result.
+export async function fetchConnectionStatuses(): Promise<ConnectionStatus[]> {
+	const res = await fetch("/api/connections/status");
+	if (!res.ok) {
+		throw new Error("failed to load connection statuses");
+	}
+	return res.json();
+}
+
 export type LibrarySection = {
 	key: string;
 	title: string;

@@ -70,7 +70,19 @@ func main() {
 
 	radarrCache := radarr.NewCache(60 * time.Second)
 	sonarrCache := sonarr.NewCache(60 * time.Second)
-	api.RegisterConnectionRoutes(mux, client, radarrCache, sonarrCache)
+
+	healthInterval := 60 * time.Second
+	if v := os.Getenv("CONNECTION_HEALTH_INTERVAL"); v != "" {
+		if d, err := time.ParseDuration(v); err == nil {
+			healthInterval = d
+		} else {
+			logger.Warn("invalid CONNECTION_HEALTH_INTERVAL, using default", "value", v, "default", healthInterval)
+		}
+	}
+	statusStore := api.NewStatusStore()
+	api.StartHealthChecker(context.Background(), client, statusStore, healthInterval, logger)
+
+	api.RegisterConnectionRoutes(mux, client, radarrCache, sonarrCache, statusStore)
 
 	mux.Handle("/", spaHandler(webui.FS()))
 

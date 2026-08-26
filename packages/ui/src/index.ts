@@ -6,4 +6,5 @@ export * from "./components/NavGroup.tsx";
 export * from "./components/NavLink.tsx";
 export * from "./components/Select.tsx";
 export * from "./components/Sidebar.tsx";
+export * from "./components/StatusBadge.tsx";
 export * from "./components/TextField.tsx";

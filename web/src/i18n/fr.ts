@@ -21,6 +21,12 @@ export const dict: Dict = {
 		title: "Tableau de bord",
 		backendStatus: "état du serveur : {{status}}",
 		checking: "vérification...",
+		connectionsTitle: "Connexions",
+		noConnections:
+			"Aucune connexion configurée pour le moment. Ajoutez-en une dans Paramètres › Connexions.",
+		statusOnline: "En ligne",
+		statusOffline: "Hors ligne",
+		statusChecking: "Vérification...",
 	},
 	libraries: {
 		title: "Bibliothèques",

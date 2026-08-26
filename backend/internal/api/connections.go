@@ -219,7 +219,11 @@ type libraryItemsResult struct {
 const defaultLibraryItemsLimit = 20
 
 // RegisterConnectionRoutes wires the Connection endpoints onto mux.
-func RegisterConnectionRoutes(mux *http.ServeMux, client *ent.Client, radarrCache *radarr.Cache, sonarrCache *sonarr.Cache) {
+func RegisterConnectionRoutes(mux *http.ServeMux, client *ent.Client, radarrCache *radarr.Cache, sonarrCache *sonarr.Cache, statusStore *StatusStore) {
+	mux.HandleFunc("GET /api/connections/status", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, http.StatusOK, statusStore.All())
+	})
+
 	mux.HandleFunc("GET /api/connections", func(w http.ResponseWriter, r *http.Request) {
 		conns, err := client.Connection.Query().All(r.Context())
 		if err != nil {

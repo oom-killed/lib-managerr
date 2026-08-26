@@ -19,6 +19,11 @@ export type Dict = {
 		title: string;
 		backendStatus: string;
 		checking: string;
+		connectionsTitle: string;
+		noConnections: string;
+		statusOnline: string;
+		statusOffline: string;
+		statusChecking: string;
 	};
 	libraries: {
 		title: string;
@@ -87,6 +92,12 @@ export const dict: Dict = {
 		title: "Dashboard",
 		backendStatus: "backend status: {{status}}",
 		checking: "checking...",
+		connectionsTitle: "Connections",
+		noConnections:
+			"No connections configured yet. Add one in Settings › Connections.",
+		statusOnline: "Online",
+		statusOffline: "Offline",
+		statusChecking: "Checking...",
 	},
 	libraries: {
 		title: "Libraries",
