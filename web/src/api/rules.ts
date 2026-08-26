@@ -13,11 +13,20 @@ export type RuleAction =
 // doesn't apply.
 export type RuleGranularity = "season" | "episode";
 
+export type RuleDelayUnit = "hours" | "days" | "weeks" | "months";
+
+// One entry in a rule's ordered action list, e.g. "unmonitor after 1 day".
+export type RuleActionStep = {
+	delayAmount: number;
+	delayUnit: RuleDelayUnit;
+	action: RuleAction;
+};
+
 export type Rule = {
 	id: number;
 	name: string;
 	enabled: boolean;
-	action: RuleAction;
+	actions: RuleActionStep[];
 	// The library this rule scans, identified the same way the rest of the
 	// app identifies a library (connection id + remote library key) rather
 	// than through the Library entity, which nothing persists into yet.
@@ -29,7 +38,7 @@ export type Rule = {
 export type RuleInput = {
 	name: string;
 	enabled: boolean;
-	action: RuleAction;
+	actions: RuleActionStep[];
 	connectionId: number;
 	libraryKey: string;
 	granularity?: RuleGranularity;

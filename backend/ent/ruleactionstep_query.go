@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -12,60 +11,58 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/oom-killed/lib-managerr/ent/connection"
 	"github.com/oom-killed/lib-managerr/ent/predicate"
 	"github.com/oom-killed/lib-managerr/ent/rule"
 	"github.com/oom-killed/lib-managerr/ent/ruleactionstep"
 )
 
-// RuleQuery is the builder for querying Rule entities.
-type RuleQuery struct {
+// RuleActionStepQuery is the builder for querying RuleActionStep entities.
+type RuleActionStepQuery struct {
 	config
-	ctx             *QueryContext
-	order           []rule.OrderOption
-	inters          []Interceptor
-	predicates      []predicate.Rule
-	withConnection  *ConnectionQuery
-	withActionSteps *RuleActionStepQuery
+	ctx        *QueryContext
+	order      []ruleactionstep.OrderOption
+	inters     []Interceptor
+	predicates []predicate.RuleActionStep
+	withRule   *RuleQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
 }
 
-// Where adds a new predicate for the RuleQuery builder.
-func (_q *RuleQuery) Where(ps ...predicate.Rule) *RuleQuery {
+// Where adds a new predicate for the RuleActionStepQuery builder.
+func (_q *RuleActionStepQuery) Where(ps ...predicate.RuleActionStep) *RuleActionStepQuery {
 	_q.predicates = append(_q.predicates, ps...)
 	return _q
 }
 
 // Limit the number of records to be returned by this query.
-func (_q *RuleQuery) Limit(limit int) *RuleQuery {
+func (_q *RuleActionStepQuery) Limit(limit int) *RuleActionStepQuery {
 	_q.ctx.Limit = &limit
 	return _q
 }
 
 // Offset to start from.
-func (_q *RuleQuery) Offset(offset int) *RuleQuery {
+func (_q *RuleActionStepQuery) Offset(offset int) *RuleActionStepQuery {
 	_q.ctx.Offset = &offset
 	return _q
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
-func (_q *RuleQuery) Unique(unique bool) *RuleQuery {
+func (_q *RuleActionStepQuery) Unique(unique bool) *RuleActionStepQuery {
 	_q.ctx.Unique = &unique
 	return _q
 }
 
 // Order specifies how the records should be ordered.
-func (_q *RuleQuery) Order(o ...rule.OrderOption) *RuleQuery {
+func (_q *RuleActionStepQuery) Order(o ...ruleactionstep.OrderOption) *RuleActionStepQuery {
 	_q.order = append(_q.order, o...)
 	return _q
 }
 
-// QueryConnection chains the current query on the "connection" edge.
-func (_q *RuleQuery) QueryConnection() *ConnectionQuery {
-	query := (&ConnectionClient{config: _q.config}).Query()
+// QueryRule chains the current query on the "rule" edge.
+func (_q *RuleActionStepQuery) QueryRule() *RuleQuery {
+	query := (&RuleClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -75,9 +72,9 @@ func (_q *RuleQuery) QueryConnection() *ConnectionQuery {
 			return nil, err
 		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(rule.Table, rule.FieldID, selector),
-			sqlgraph.To(connection.Table, connection.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, rule.ConnectionTable, rule.ConnectionColumn),
+			sqlgraph.From(ruleactionstep.Table, ruleactionstep.FieldID, selector),
+			sqlgraph.To(rule.Table, rule.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, ruleactionstep.RuleTable, ruleactionstep.RuleColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -85,43 +82,21 @@ func (_q *RuleQuery) QueryConnection() *ConnectionQuery {
 	return query
 }
 
-// QueryActionSteps chains the current query on the "action_steps" edge.
-func (_q *RuleQuery) QueryActionSteps() *RuleActionStepQuery {
-	query := (&RuleActionStepClient{config: _q.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := _q.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := _q.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(rule.Table, rule.FieldID, selector),
-			sqlgraph.To(ruleactionstep.Table, ruleactionstep.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, rule.ActionStepsTable, rule.ActionStepsColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// First returns the first Rule entity from the query.
-// Returns a *NotFoundError when no Rule was found.
-func (_q *RuleQuery) First(ctx context.Context) (*Rule, error) {
+// First returns the first RuleActionStep entity from the query.
+// Returns a *NotFoundError when no RuleActionStep was found.
+func (_q *RuleActionStepQuery) First(ctx context.Context) (*RuleActionStep, error) {
 	nodes, err := _q.Limit(1).All(setContextOp(ctx, _q.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
 	if len(nodes) == 0 {
-		return nil, &NotFoundError{rule.Label}
+		return nil, &NotFoundError{ruleactionstep.Label}
 	}
 	return nodes[0], nil
 }
 
 // FirstX is like First, but panics if an error occurs.
-func (_q *RuleQuery) FirstX(ctx context.Context) *Rule {
+func (_q *RuleActionStepQuery) FirstX(ctx context.Context) *RuleActionStep {
 	node, err := _q.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -129,22 +104,22 @@ func (_q *RuleQuery) FirstX(ctx context.Context) *Rule {
 	return node
 }
 
-// FirstID returns the first Rule ID from the query.
-// Returns a *NotFoundError when no Rule ID was found.
-func (_q *RuleQuery) FirstID(ctx context.Context) (id int, err error) {
+// FirstID returns the first RuleActionStep ID from the query.
+// Returns a *NotFoundError when no RuleActionStep ID was found.
+func (_q *RuleActionStepQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
 	if ids, err = _q.Limit(1).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
-		err = &NotFoundError{rule.Label}
+		err = &NotFoundError{ruleactionstep.Label}
 		return
 	}
 	return ids[0], nil
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (_q *RuleQuery) FirstIDX(ctx context.Context) int {
+func (_q *RuleActionStepQuery) FirstIDX(ctx context.Context) int {
 	id, err := _q.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -152,10 +127,10 @@ func (_q *RuleQuery) FirstIDX(ctx context.Context) int {
 	return id
 }
 
-// Only returns a single Rule entity found by the query, ensuring it only returns one.
-// Returns a *NotSingularError when more than one Rule entity is found.
-// Returns a *NotFoundError when no Rule entities are found.
-func (_q *RuleQuery) Only(ctx context.Context) (*Rule, error) {
+// Only returns a single RuleActionStep entity found by the query, ensuring it only returns one.
+// Returns a *NotSingularError when more than one RuleActionStep entity is found.
+// Returns a *NotFoundError when no RuleActionStep entities are found.
+func (_q *RuleActionStepQuery) Only(ctx context.Context) (*RuleActionStep, error) {
 	nodes, err := _q.Limit(2).All(setContextOp(ctx, _q.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
@@ -164,14 +139,14 @@ func (_q *RuleQuery) Only(ctx context.Context) (*Rule, error) {
 	case 1:
 		return nodes[0], nil
 	case 0:
-		return nil, &NotFoundError{rule.Label}
+		return nil, &NotFoundError{ruleactionstep.Label}
 	default:
-		return nil, &NotSingularError{rule.Label}
+		return nil, &NotSingularError{ruleactionstep.Label}
 	}
 }
 
 // OnlyX is like Only, but panics if an error occurs.
-func (_q *RuleQuery) OnlyX(ctx context.Context) *Rule {
+func (_q *RuleActionStepQuery) OnlyX(ctx context.Context) *RuleActionStep {
 	node, err := _q.Only(ctx)
 	if err != nil {
 		panic(err)
@@ -179,10 +154,10 @@ func (_q *RuleQuery) OnlyX(ctx context.Context) *Rule {
 	return node
 }
 
-// OnlyID is like Only, but returns the only Rule ID in the query.
-// Returns a *NotSingularError when more than one Rule ID is found.
+// OnlyID is like Only, but returns the only RuleActionStep ID in the query.
+// Returns a *NotSingularError when more than one RuleActionStep ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (_q *RuleQuery) OnlyID(ctx context.Context) (id int, err error) {
+func (_q *RuleActionStepQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
 	if ids, err = _q.Limit(2).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
@@ -191,15 +166,15 @@ func (_q *RuleQuery) OnlyID(ctx context.Context) (id int, err error) {
 	case 1:
 		id = ids[0]
 	case 0:
-		err = &NotFoundError{rule.Label}
+		err = &NotFoundError{ruleactionstep.Label}
 	default:
-		err = &NotSingularError{rule.Label}
+		err = &NotSingularError{ruleactionstep.Label}
 	}
 	return
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (_q *RuleQuery) OnlyIDX(ctx context.Context) int {
+func (_q *RuleActionStepQuery) OnlyIDX(ctx context.Context) int {
 	id, err := _q.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -207,18 +182,18 @@ func (_q *RuleQuery) OnlyIDX(ctx context.Context) int {
 	return id
 }
 
-// All executes the query and returns a list of Rules.
-func (_q *RuleQuery) All(ctx context.Context) ([]*Rule, error) {
+// All executes the query and returns a list of RuleActionSteps.
+func (_q *RuleActionStepQuery) All(ctx context.Context) ([]*RuleActionStep, error) {
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryAll)
 	if err := _q.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	qr := querierAll[[]*Rule, *RuleQuery]()
-	return withInterceptors[[]*Rule](ctx, _q, qr, _q.inters)
+	qr := querierAll[[]*RuleActionStep, *RuleActionStepQuery]()
+	return withInterceptors[[]*RuleActionStep](ctx, _q, qr, _q.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
-func (_q *RuleQuery) AllX(ctx context.Context) []*Rule {
+func (_q *RuleActionStepQuery) AllX(ctx context.Context) []*RuleActionStep {
 	nodes, err := _q.All(ctx)
 	if err != nil {
 		panic(err)
@@ -226,20 +201,20 @@ func (_q *RuleQuery) AllX(ctx context.Context) []*Rule {
 	return nodes
 }
 
-// IDs executes the query and returns a list of Rule IDs.
-func (_q *RuleQuery) IDs(ctx context.Context) (ids []int, err error) {
+// IDs executes the query and returns a list of RuleActionStep IDs.
+func (_q *RuleActionStepQuery) IDs(ctx context.Context) (ids []int, err error) {
 	if _q.ctx.Unique == nil && _q.path != nil {
 		_q.Unique(true)
 	}
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryIDs)
-	if err = _q.Select(rule.FieldID).Scan(ctx, &ids); err != nil {
+	if err = _q.Select(ruleactionstep.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (_q *RuleQuery) IDsX(ctx context.Context) []int {
+func (_q *RuleActionStepQuery) IDsX(ctx context.Context) []int {
 	ids, err := _q.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -248,16 +223,16 @@ func (_q *RuleQuery) IDsX(ctx context.Context) []int {
 }
 
 // Count returns the count of the given query.
-func (_q *RuleQuery) Count(ctx context.Context) (int, error) {
+func (_q *RuleActionStepQuery) Count(ctx context.Context) (int, error) {
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryCount)
 	if err := _q.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return withInterceptors[int](ctx, _q, querierCount[*RuleQuery](), _q.inters)
+	return withInterceptors[int](ctx, _q, querierCount[*RuleActionStepQuery](), _q.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
-func (_q *RuleQuery) CountX(ctx context.Context) int {
+func (_q *RuleActionStepQuery) CountX(ctx context.Context) int {
 	count, err := _q.Count(ctx)
 	if err != nil {
 		panic(err)
@@ -266,7 +241,7 @@ func (_q *RuleQuery) CountX(ctx context.Context) int {
 }
 
 // Exist returns true if the query has elements in the graph.
-func (_q *RuleQuery) Exist(ctx context.Context) (bool, error) {
+func (_q *RuleActionStepQuery) Exist(ctx context.Context) (bool, error) {
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryExist)
 	switch _, err := _q.FirstID(ctx); {
 	case IsNotFound(err):
@@ -279,7 +254,7 @@ func (_q *RuleQuery) Exist(ctx context.Context) (bool, error) {
 }
 
 // ExistX is like Exist, but panics if an error occurs.
-func (_q *RuleQuery) ExistX(ctx context.Context) bool {
+func (_q *RuleActionStepQuery) ExistX(ctx context.Context) bool {
 	exist, err := _q.Exist(ctx)
 	if err != nil {
 		panic(err)
@@ -287,45 +262,33 @@ func (_q *RuleQuery) ExistX(ctx context.Context) bool {
 	return exist
 }
 
-// Clone returns a duplicate of the RuleQuery builder, including all associated steps. It can be
+// Clone returns a duplicate of the RuleActionStepQuery builder, including all associated steps. It can be
 // used to prepare common query builders and use them differently after the clone is made.
-func (_q *RuleQuery) Clone() *RuleQuery {
+func (_q *RuleActionStepQuery) Clone() *RuleActionStepQuery {
 	if _q == nil {
 		return nil
 	}
-	return &RuleQuery{
-		config:          _q.config,
-		ctx:             _q.ctx.Clone(),
-		order:           append([]rule.OrderOption{}, _q.order...),
-		inters:          append([]Interceptor{}, _q.inters...),
-		predicates:      append([]predicate.Rule{}, _q.predicates...),
-		withConnection:  _q.withConnection.Clone(),
-		withActionSteps: _q.withActionSteps.Clone(),
+	return &RuleActionStepQuery{
+		config:     _q.config,
+		ctx:        _q.ctx.Clone(),
+		order:      append([]ruleactionstep.OrderOption{}, _q.order...),
+		inters:     append([]Interceptor{}, _q.inters...),
+		predicates: append([]predicate.RuleActionStep{}, _q.predicates...),
+		withRule:   _q.withRule.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
 	}
 }
 
-// WithConnection tells the query-builder to eager-load the nodes that are connected to
-// the "connection" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *RuleQuery) WithConnection(opts ...func(*ConnectionQuery)) *RuleQuery {
-	query := (&ConnectionClient{config: _q.config}).Query()
+// WithRule tells the query-builder to eager-load the nodes that are connected to
+// the "rule" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *RuleActionStepQuery) WithRule(opts ...func(*RuleQuery)) *RuleActionStepQuery {
+	query := (&RuleClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	_q.withConnection = query
-	return _q
-}
-
-// WithActionSteps tells the query-builder to eager-load the nodes that are connected to
-// the "action_steps" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *RuleQuery) WithActionSteps(opts ...func(*RuleActionStepQuery)) *RuleQuery {
-	query := (&RuleActionStepClient{config: _q.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	_q.withActionSteps = query
+	_q.withRule = query
 	return _q
 }
 
@@ -339,15 +302,15 @@ func (_q *RuleQuery) WithActionSteps(opts ...func(*RuleActionStepQuery)) *RuleQu
 //		Count int `json:"count,omitempty"`
 //	}
 //
-//	client.Rule.Query().
-//		GroupBy(rule.FieldCreatedAt).
+//	client.RuleActionStep.Query().
+//		GroupBy(ruleactionstep.FieldCreatedAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-func (_q *RuleQuery) GroupBy(field string, fields ...string) *RuleGroupBy {
+func (_q *RuleActionStepQuery) GroupBy(field string, fields ...string) *RuleActionStepGroupBy {
 	_q.ctx.Fields = append([]string{field}, fields...)
-	grbuild := &RuleGroupBy{build: _q}
+	grbuild := &RuleActionStepGroupBy{build: _q}
 	grbuild.flds = &_q.ctx.Fields
-	grbuild.label = rule.Label
+	grbuild.label = ruleactionstep.Label
 	grbuild.scan = grbuild.Scan
 	return grbuild
 }
@@ -361,23 +324,23 @@ func (_q *RuleQuery) GroupBy(field string, fields ...string) *RuleGroupBy {
 //		CreatedAt time.Time `json:"created_at,omitempty"`
 //	}
 //
-//	client.Rule.Query().
-//		Select(rule.FieldCreatedAt).
+//	client.RuleActionStep.Query().
+//		Select(ruleactionstep.FieldCreatedAt).
 //		Scan(ctx, &v)
-func (_q *RuleQuery) Select(fields ...string) *RuleSelect {
+func (_q *RuleActionStepQuery) Select(fields ...string) *RuleActionStepSelect {
 	_q.ctx.Fields = append(_q.ctx.Fields, fields...)
-	sbuild := &RuleSelect{RuleQuery: _q}
-	sbuild.label = rule.Label
+	sbuild := &RuleActionStepSelect{RuleActionStepQuery: _q}
+	sbuild.label = ruleactionstep.Label
 	sbuild.flds, sbuild.scan = &_q.ctx.Fields, sbuild.Scan
 	return sbuild
 }
 
-// Aggregate returns a RuleSelect configured with the given aggregations.
-func (_q *RuleQuery) Aggregate(fns ...AggregateFunc) *RuleSelect {
+// Aggregate returns a RuleActionStepSelect configured with the given aggregations.
+func (_q *RuleActionStepQuery) Aggregate(fns ...AggregateFunc) *RuleActionStepSelect {
 	return _q.Select().Aggregate(fns...)
 }
 
-func (_q *RuleQuery) prepareQuery(ctx context.Context) error {
+func (_q *RuleActionStepQuery) prepareQuery(ctx context.Context) error {
 	for _, inter := range _q.inters {
 		if inter == nil {
 			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
@@ -389,7 +352,7 @@ func (_q *RuleQuery) prepareQuery(ctx context.Context) error {
 		}
 	}
 	for _, f := range _q.ctx.Fields {
-		if !rule.ValidColumn(f) {
+		if !ruleactionstep.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
 	}
@@ -403,20 +366,19 @@ func (_q *RuleQuery) prepareQuery(ctx context.Context) error {
 	return nil
 }
 
-func (_q *RuleQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Rule, error) {
+func (_q *RuleActionStepQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*RuleActionStep, error) {
 	var (
-		nodes       = []*Rule{}
+		nodes       = []*RuleActionStep{}
 		_spec       = _q.querySpec()
-		loadedTypes = [2]bool{
-			_q.withConnection != nil,
-			_q.withActionSteps != nil,
+		loadedTypes = [1]bool{
+			_q.withRule != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
-		return (*Rule).scanValues(nil, columns)
+		return (*RuleActionStep).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []any) error {
-		node := &Rule{config: _q.config}
+		node := &RuleActionStep{config: _q.config}
 		nodes = append(nodes, node)
 		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
@@ -430,27 +392,20 @@ func (_q *RuleQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Rule, e
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := _q.withConnection; query != nil {
-		if err := _q.loadConnection(ctx, query, nodes, nil,
-			func(n *Rule, e *Connection) { n.Edges.Connection = e }); err != nil {
-			return nil, err
-		}
-	}
-	if query := _q.withActionSteps; query != nil {
-		if err := _q.loadActionSteps(ctx, query, nodes,
-			func(n *Rule) { n.Edges.ActionSteps = []*RuleActionStep{} },
-			func(n *Rule, e *RuleActionStep) { n.Edges.ActionSteps = append(n.Edges.ActionSteps, e) }); err != nil {
+	if query := _q.withRule; query != nil {
+		if err := _q.loadRule(ctx, query, nodes, nil,
+			func(n *RuleActionStep, e *Rule) { n.Edges.Rule = e }); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (_q *RuleQuery) loadConnection(ctx context.Context, query *ConnectionQuery, nodes []*Rule, init func(*Rule), assign func(*Rule, *Connection)) error {
+func (_q *RuleActionStepQuery) loadRule(ctx context.Context, query *RuleQuery, nodes []*RuleActionStep, init func(*RuleActionStep), assign func(*RuleActionStep, *Rule)) error {
 	ids := make([]int, 0, len(nodes))
-	nodeids := make(map[int][]*Rule)
+	nodeids := make(map[int][]*RuleActionStep)
 	for i := range nodes {
-		fk := nodes[i].ConnectionID
+		fk := nodes[i].RuleID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -459,7 +414,7 @@ func (_q *RuleQuery) loadConnection(ctx context.Context, query *ConnectionQuery,
 	if len(ids) == 0 {
 		return nil
 	}
-	query.Where(connection.IDIn(ids...))
+	query.Where(rule.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
@@ -467,7 +422,7 @@ func (_q *RuleQuery) loadConnection(ctx context.Context, query *ConnectionQuery,
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "connection_id" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "rule_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -475,38 +430,8 @@ func (_q *RuleQuery) loadConnection(ctx context.Context, query *ConnectionQuery,
 	}
 	return nil
 }
-func (_q *RuleQuery) loadActionSteps(ctx context.Context, query *RuleActionStepQuery, nodes []*Rule, init func(*Rule), assign func(*Rule, *RuleActionStep)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[int]*Rule)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	if len(query.ctx.Fields) > 0 {
-		query.ctx.AppendFieldOnce(ruleactionstep.FieldRuleID)
-	}
-	query.Where(predicate.RuleActionStep(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(rule.ActionStepsColumn), fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.RuleID
-		node, ok := nodeids[fk]
-		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "rule_id" returned %v for node %v`, fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
-}
 
-func (_q *RuleQuery) sqlCount(ctx context.Context) (int, error) {
+func (_q *RuleActionStepQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := _q.querySpec()
 	_spec.Node.Columns = _q.ctx.Fields
 	if len(_q.ctx.Fields) > 0 {
@@ -515,8 +440,8 @@ func (_q *RuleQuery) sqlCount(ctx context.Context) (int, error) {
 	return sqlgraph.CountNodes(ctx, _q.driver, _spec)
 }
 
-func (_q *RuleQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(rule.Table, rule.Columns, sqlgraph.NewFieldSpec(rule.FieldID, field.TypeInt))
+func (_q *RuleActionStepQuery) querySpec() *sqlgraph.QuerySpec {
+	_spec := sqlgraph.NewQuerySpec(ruleactionstep.Table, ruleactionstep.Columns, sqlgraph.NewFieldSpec(ruleactionstep.FieldID, field.TypeInt))
 	_spec.From = _q.sql
 	if unique := _q.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
@@ -525,14 +450,14 @@ func (_q *RuleQuery) querySpec() *sqlgraph.QuerySpec {
 	}
 	if fields := _q.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
-		_spec.Node.Columns = append(_spec.Node.Columns, rule.FieldID)
+		_spec.Node.Columns = append(_spec.Node.Columns, ruleactionstep.FieldID)
 		for i := range fields {
-			if fields[i] != rule.FieldID {
+			if fields[i] != ruleactionstep.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
 		}
-		if _q.withConnection != nil {
-			_spec.Node.AddColumnOnce(rule.FieldConnectionID)
+		if _q.withRule != nil {
+			_spec.Node.AddColumnOnce(ruleactionstep.FieldRuleID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {
@@ -558,12 +483,12 @@ func (_q *RuleQuery) querySpec() *sqlgraph.QuerySpec {
 	return _spec
 }
 
-func (_q *RuleQuery) sqlQuery(ctx context.Context) *sql.Selector {
+func (_q *RuleActionStepQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(_q.driver.Dialect())
-	t1 := builder.Table(rule.Table)
+	t1 := builder.Table(ruleactionstep.Table)
 	columns := _q.ctx.Fields
 	if len(columns) == 0 {
-		columns = rule.Columns
+		columns = ruleactionstep.Columns
 	}
 	selector := builder.Select(t1.Columns(columns...)...).From(t1)
 	if _q.sql != nil {
@@ -590,28 +515,28 @@ func (_q *RuleQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	return selector
 }
 
-// RuleGroupBy is the group-by builder for Rule entities.
-type RuleGroupBy struct {
+// RuleActionStepGroupBy is the group-by builder for RuleActionStep entities.
+type RuleActionStepGroupBy struct {
 	selector
-	build *RuleQuery
+	build *RuleActionStepQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
-func (_g *RuleGroupBy) Aggregate(fns ...AggregateFunc) *RuleGroupBy {
+func (_g *RuleActionStepGroupBy) Aggregate(fns ...AggregateFunc) *RuleActionStepGroupBy {
 	_g.fns = append(_g.fns, fns...)
 	return _g
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (_g *RuleGroupBy) Scan(ctx context.Context, v any) error {
+func (_g *RuleActionStepGroupBy) Scan(ctx context.Context, v any) error {
 	ctx = setContextOp(ctx, _g.build.ctx, ent.OpQueryGroupBy)
 	if err := _g.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*RuleQuery, *RuleGroupBy](ctx, _g.build, _g, _g.build.inters, v)
+	return scanWithInterceptors[*RuleActionStepQuery, *RuleActionStepGroupBy](ctx, _g.build, _g, _g.build.inters, v)
 }
 
-func (_g *RuleGroupBy) sqlScan(ctx context.Context, root *RuleQuery, v any) error {
+func (_g *RuleActionStepGroupBy) sqlScan(ctx context.Context, root *RuleActionStepQuery, v any) error {
 	selector := root.sqlQuery(ctx).Select()
 	aggregation := make([]string, 0, len(_g.fns))
 	for _, fn := range _g.fns {
@@ -638,28 +563,28 @@ func (_g *RuleGroupBy) sqlScan(ctx context.Context, root *RuleQuery, v any) erro
 	return sql.ScanSlice(rows, v)
 }
 
-// RuleSelect is the builder for selecting fields of Rule entities.
-type RuleSelect struct {
-	*RuleQuery
+// RuleActionStepSelect is the builder for selecting fields of RuleActionStep entities.
+type RuleActionStepSelect struct {
+	*RuleActionStepQuery
 	selector
 }
 
 // Aggregate adds the given aggregation functions to the selector query.
-func (_s *RuleSelect) Aggregate(fns ...AggregateFunc) *RuleSelect {
+func (_s *RuleActionStepSelect) Aggregate(fns ...AggregateFunc) *RuleActionStepSelect {
 	_s.fns = append(_s.fns, fns...)
 	return _s
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (_s *RuleSelect) Scan(ctx context.Context, v any) error {
+func (_s *RuleActionStepSelect) Scan(ctx context.Context, v any) error {
 	ctx = setContextOp(ctx, _s.ctx, ent.OpQuerySelect)
 	if err := _s.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*RuleQuery, *RuleSelect](ctx, _s.RuleQuery, _s, _s.inters, v)
+	return scanWithInterceptors[*RuleActionStepQuery, *RuleActionStepSelect](ctx, _s.RuleActionStepQuery, _s, _s.inters, v)
 }
 
-func (_s *RuleSelect) sqlScan(ctx context.Context, root *RuleQuery, v any) error {
+func (_s *RuleActionStepSelect) sqlScan(ctx context.Context, root *RuleActionStepQuery, v any) error {
 	selector := root.sqlQuery(ctx)
 	aggregation := make([]string, 0, len(_s.fns))
 	for _, fn := range _s.fns {

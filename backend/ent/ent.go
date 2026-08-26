@@ -15,6 +15,7 @@ import (
 	"github.com/oom-killed/lib-managerr/ent/connection"
 	"github.com/oom-killed/lib-managerr/ent/library"
 	"github.com/oom-killed/lib-managerr/ent/rule"
+	"github.com/oom-killed/lib-managerr/ent/ruleactionstep"
 )
 
 // ent aliases to avoid import conflicts in user's code.
@@ -75,9 +76,10 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			connection.Table: connection.ValidColumn,
-			library.Table:    library.ValidColumn,
-			rule.Table:       rule.ValidColumn,
+			connection.Table:     connection.ValidColumn,
+			library.Table:        library.ValidColumn,
+			rule.Table:           rule.ValidColumn,
+			ruleactionstep.Table: ruleactionstep.ValidColumn,
 		})
 	})
 	return columnCheck(t, c)

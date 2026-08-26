@@ -8,6 +8,7 @@ import (
 	"github.com/oom-killed/lib-managerr/ent/connection"
 	"github.com/oom-killed/lib-managerr/ent/library"
 	"github.com/oom-killed/lib-managerr/ent/rule"
+	"github.com/oom-killed/lib-managerr/ent/ruleactionstep"
 	"github.com/oom-killed/lib-managerr/ent/schema"
 )
 
@@ -101,7 +102,26 @@ func init() {
 	// rule.DefaultEnabled holds the default value on creation for the enabled field.
 	rule.DefaultEnabled = ruleDescEnabled.Default.(bool)
 	// ruleDescLibraryKey is the schema descriptor for library_key field.
-	ruleDescLibraryKey := ruleFields[4].Descriptor()
+	ruleDescLibraryKey := ruleFields[3].Descriptor()
 	// rule.LibraryKeyValidator is a validator for the "library_key" field. It is called by the builders before save.
 	rule.LibraryKeyValidator = ruleDescLibraryKey.Validators[0].(func(string) error)
+	ruleactionstepMixin := schema.RuleActionStep{}.Mixin()
+	ruleactionstepMixinFields0 := ruleactionstepMixin[0].Fields()
+	_ = ruleactionstepMixinFields0
+	ruleactionstepFields := schema.RuleActionStep{}.Fields()
+	_ = ruleactionstepFields
+	// ruleactionstepDescCreatedAt is the schema descriptor for created_at field.
+	ruleactionstepDescCreatedAt := ruleactionstepMixinFields0[0].Descriptor()
+	// ruleactionstep.DefaultCreatedAt holds the default value on creation for the created_at field.
+	ruleactionstep.DefaultCreatedAt = ruleactionstepDescCreatedAt.Default.(func() time.Time)
+	// ruleactionstepDescUpdatedAt is the schema descriptor for updated_at field.
+	ruleactionstepDescUpdatedAt := ruleactionstepMixinFields0[1].Descriptor()
+	// ruleactionstep.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	ruleactionstep.DefaultUpdatedAt = ruleactionstepDescUpdatedAt.Default.(func() time.Time)
+	// ruleactionstep.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	ruleactionstep.UpdateDefaultUpdatedAt = ruleactionstepDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// ruleactionstepDescDelayAmount is the schema descriptor for delay_amount field.
+	ruleactionstepDescDelayAmount := ruleactionstepFields[1].Descriptor()
+	// ruleactionstep.DelayAmountValidator is a validator for the "delay_amount" field. It is called by the builders before save.
+	ruleactionstep.DelayAmountValidator = ruleactionstepDescDelayAmount.Validators[0].(func(int) error)
 }

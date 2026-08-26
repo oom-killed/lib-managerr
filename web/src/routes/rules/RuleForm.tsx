@@ -1,5 +1,11 @@
 import { Button, Checkbox, Select, TextField } from "@lib-managerr/ui";
-import { createEffect, createResource, createSignal, Show } from "solid-js";
+import {
+	createEffect,
+	createResource,
+	createSignal,
+	For,
+	Show,
+} from "solid-js";
 import {
 	type Connection,
 	fetchConnectionLibraries,
@@ -8,7 +14,8 @@ import {
 } from "../../api/connections.ts";
 import type {
 	Rule,
-	RuleAction,
+	RuleActionStep,
+	RuleDelayUnit,
 	RuleGranularity,
 	RuleInput,
 } from "../../api/rules.ts";
@@ -24,12 +31,20 @@ export type RuleFormProps = {
 	onCancel: () => void;
 };
 
+const DELAY_UNITS: RuleDelayUnit[] = ["hours", "days", "weeks", "months"];
+
+function defaultStep(defaultAction: RuleActionStep["action"]): RuleActionStep {
+	return { delayAmount: 1, delayUnit: "days", action: defaultAction };
+}
+
 export function RuleForm(props: RuleFormProps) {
 	const { t } = useI18n();
 	const [name, setName] = createSignal(props.rule?.name ?? "");
 	const [enabled, setEnabled] = createSignal(props.rule?.enabled ?? true);
-	const [action, setAction] = createSignal<RuleAction>(
-		props.rule?.action ?? "do_nothing",
+	const [actions, setActions] = createSignal<RuleActionStep[]>(
+		props.rule?.actions && props.rule.actions.length > 0
+			? props.rule.actions
+			: [defaultStep("do_nothing")],
 	);
 	const [connectionId, setConnectionId] = createSignal<number | undefined>(
 		props.rule?.connectionId,
@@ -86,15 +101,19 @@ export function RuleForm(props: RuleFormProps) {
 	const availableActionOptions = () =>
 		ruleActionOptionsFor(selectedLibraryMediaType());
 
-	// Reset to an action that's still valid whenever the selected library's
-	// media type changes what's applicable (e.g. switching from a movie
-	// library with action "delete" to a show library, where that Radarr
-	// action doesn't apply).
+	// Reset any step whose action is no longer valid whenever the selected
+	// library's media type changes what's applicable (e.g. switching from a
+	// movie library with action "delete" to a show library, where that
+	// Radarr action doesn't apply).
 	createEffect(() => {
 		const available = availableActionOptions();
-		if (!available.some((o) => o.value === action())) {
-			setAction(available[0]?.value ?? "do_nothing");
-		}
+		setActions((prev) =>
+			prev.map((step) =>
+				available.some((o) => o.value === step.action)
+					? step
+					: { ...step, action: available[0]?.value ?? "do_nothing" },
+			),
+		);
 	});
 
 	const isShowLibrary = () => selectedLibraryMediaType() === "show";
@@ -113,11 +132,30 @@ export function RuleForm(props: RuleFormProps) {
 		}
 	});
 
+	const updateStep = (index: number, patch: Partial<RuleActionStep>) => {
+		setActions((prev) =>
+			prev.map((step, i) => (i === index ? { ...step, ...patch } : step)),
+		);
+	};
+
+	const addStep = () => {
+		setActions((prev) => [
+			...prev,
+			defaultStep(availableActionOptions()[0]?.value ?? "do_nothing"),
+		]);
+	};
+
+	const removeStep = (index: number) => {
+		setActions((prev) => prev.filter((_, i) => i !== index));
+	};
+
 	const canSave = () =>
 		name().trim() !== "" &&
 		connectionId() !== undefined &&
 		libraryKey() !== undefined &&
 		(!isShowLibrary() || granularity() !== undefined) &&
+		actions().length > 0 &&
+		actions().every((step) => step.delayAmount > 0) &&
 		!submitting();
 
 	const handleSubmit = async (e: SubmitEvent) => {
@@ -130,7 +168,7 @@ export function RuleForm(props: RuleFormProps) {
 			await props.onSubmit({
 				name: name(),
 				enabled: enabled(),
-				action: action(),
+				actions: actions(),
 				// biome-ignore lint/style/noNonNullAssertion: guarded by canSave()
 				connectionId: connectionId()!,
 				// biome-ignore lint/style/noNonNullAssertion: guarded by canSave()
@@ -212,22 +250,82 @@ export function RuleForm(props: RuleFormProps) {
 					/>
 				</div>
 			</Show>
-			<div class="flex flex-col gap-1">
-				<label
-					for="rule-action"
-					class="text-sm text-neutral-700 dark:text-neutral-300"
-				>
-					{t("rules.fields.action")}
-				</label>
-				<Select
-					id="rule-action"
-					options={availableActionOptions().map((o) => ({
-						value: o.value,
-						label: t(o.labelKey),
-					}))}
-					value={action()}
-					onChange={(value) => setAction(value as RuleAction)}
-				/>
+
+			<div class="flex flex-col gap-2">
+				<span class="text-sm text-neutral-700 dark:text-neutral-300">
+					{t("rules.fields.actions")}
+				</span>
+				<For each={actions()}>
+					{(step, index) => (
+						<div class="flex flex-col gap-2 rounded border border-neutral-200 p-2 dark:border-neutral-800">
+							<div class="flex items-end gap-2">
+								<div class="w-20">
+									<TextField
+										id={`rule-action-delay-${index()}`}
+										label={t("rules.fields.delayAmount")}
+										type="number"
+										value={String(step.delayAmount)}
+										onChange={(value) =>
+											updateStep(index(), { delayAmount: Number(value) })
+										}
+									/>
+								</div>
+								<div class="flex flex-col gap-1">
+									<label
+										for={`rule-action-unit-${index()}`}
+										class="text-sm text-neutral-700 dark:text-neutral-300"
+									>
+										{t("rules.fields.delayUnit")}
+									</label>
+									<Select
+										id={`rule-action-unit-${index()}`}
+										options={DELAY_UNITS.map((unit) => ({
+											value: unit,
+											label: t(`rules.delayUnits.${unit}`),
+										}))}
+										value={step.delayUnit}
+										onChange={(value) =>
+											updateStep(index(), { delayUnit: value as RuleDelayUnit })
+										}
+									/>
+								</div>
+							</div>
+							<div class="flex flex-col gap-1">
+								<label
+									for={`rule-action-value-${index()}`}
+									class="text-sm text-neutral-700 dark:text-neutral-300"
+								>
+									{t("rules.fields.action")}
+								</label>
+								<Select
+									id={`rule-action-value-${index()}`}
+									options={availableActionOptions().map((o) => ({
+										value: o.value,
+										label: t(o.labelKey),
+									}))}
+									value={step.action}
+									onChange={(value) =>
+										updateStep(index(), {
+											action: value as RuleActionStep["action"],
+										})
+									}
+								/>
+							</div>
+							<div class="flex justify-end">
+								<Button
+									type="button"
+									variant="secondary"
+									onClick={() => removeStep(index())}
+								>
+									{t("common.delete")}
+								</Button>
+							</div>
+						</div>
+					)}
+				</For>
+				<Button type="button" variant="secondary" onClick={addStep}>
+					{t("rules.addAction")}
+				</Button>
 			</div>
 
 			<div class="mt-2 flex justify-end gap-2">

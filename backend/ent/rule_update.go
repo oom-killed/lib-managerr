@@ -14,6 +14,7 @@ import (
 	"github.com/oom-killed/lib-managerr/ent/connection"
 	"github.com/oom-killed/lib-managerr/ent/predicate"
 	"github.com/oom-killed/lib-managerr/ent/rule"
+	"github.com/oom-killed/lib-managerr/ent/ruleactionstep"
 )
 
 // RuleUpdate is the builder for updating Rule entities.
@@ -59,20 +60,6 @@ func (_u *RuleUpdate) SetEnabled(v bool) *RuleUpdate {
 func (_u *RuleUpdate) SetNillableEnabled(v *bool) *RuleUpdate {
 	if v != nil {
 		_u.SetEnabled(*v)
-	}
-	return _u
-}
-
-// SetAction sets the "action" field.
-func (_u *RuleUpdate) SetAction(v rule.Action) *RuleUpdate {
-	_u.mutation.SetAction(v)
-	return _u
-}
-
-// SetNillableAction sets the "action" field if the given value is not nil.
-func (_u *RuleUpdate) SetNillableAction(v *rule.Action) *RuleUpdate {
-	if v != nil {
-		_u.SetAction(*v)
 	}
 	return _u
 }
@@ -130,6 +117,21 @@ func (_u *RuleUpdate) SetConnection(v *Connection) *RuleUpdate {
 	return _u.SetConnectionID(v.ID)
 }
 
+// AddActionStepIDs adds the "action_steps" edge to the RuleActionStep entity by IDs.
+func (_u *RuleUpdate) AddActionStepIDs(ids ...int) *RuleUpdate {
+	_u.mutation.AddActionStepIDs(ids...)
+	return _u
+}
+
+// AddActionSteps adds the "action_steps" edges to the RuleActionStep entity.
+func (_u *RuleUpdate) AddActionSteps(v ...*RuleActionStep) *RuleUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddActionStepIDs(ids...)
+}
+
 // Mutation returns the RuleMutation object of the builder.
 func (_u *RuleUpdate) Mutation() *RuleMutation {
 	return _u.mutation
@@ -139,6 +141,27 @@ func (_u *RuleUpdate) Mutation() *RuleMutation {
 func (_u *RuleUpdate) ClearConnection() *RuleUpdate {
 	_u.mutation.ClearConnection()
 	return _u
+}
+
+// ClearActionSteps clears all "action_steps" edges to the RuleActionStep entity.
+func (_u *RuleUpdate) ClearActionSteps() *RuleUpdate {
+	_u.mutation.ClearActionSteps()
+	return _u
+}
+
+// RemoveActionStepIDs removes the "action_steps" edge to RuleActionStep entities by IDs.
+func (_u *RuleUpdate) RemoveActionStepIDs(ids ...int) *RuleUpdate {
+	_u.mutation.RemoveActionStepIDs(ids...)
+	return _u
+}
+
+// RemoveActionSteps removes "action_steps" edges to RuleActionStep entities.
+func (_u *RuleUpdate) RemoveActionSteps(v ...*RuleActionStep) *RuleUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveActionStepIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -184,11 +207,6 @@ func (_u *RuleUpdate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Rule.name": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.Action(); ok {
-		if err := rule.ActionValidator(v); err != nil {
-			return &ValidationError{Name: "action", err: fmt.Errorf(`ent: validator failed for field "Rule.action": %w`, err)}
-		}
-	}
 	if v, ok := _u.mutation.LibraryKey(); ok {
 		if err := rule.LibraryKeyValidator(v); err != nil {
 			return &ValidationError{Name: "library_key", err: fmt.Errorf(`ent: validator failed for field "Rule.library_key": %w`, err)}
@@ -226,9 +244,6 @@ func (_u *RuleUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.Enabled(); ok {
 		_spec.SetField(rule.FieldEnabled, field.TypeBool, value)
 	}
-	if value, ok := _u.mutation.Action(); ok {
-		_spec.SetField(rule.FieldAction, field.TypeEnum, value)
-	}
 	if value, ok := _u.mutation.LibraryKey(); ok {
 		_spec.SetField(rule.FieldLibraryKey, field.TypeString, value)
 	}
@@ -260,6 +275,51 @@ func (_u *RuleUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(connection.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ActionStepsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   rule.ActionStepsTable,
+			Columns: []string{rule.ActionStepsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ruleactionstep.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedActionStepsIDs(); len(nodes) > 0 && !_u.mutation.ActionStepsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   rule.ActionStepsTable,
+			Columns: []string{rule.ActionStepsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ruleactionstep.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ActionStepsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   rule.ActionStepsTable,
+			Columns: []string{rule.ActionStepsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ruleactionstep.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -321,20 +381,6 @@ func (_u *RuleUpdateOne) SetNillableEnabled(v *bool) *RuleUpdateOne {
 	return _u
 }
 
-// SetAction sets the "action" field.
-func (_u *RuleUpdateOne) SetAction(v rule.Action) *RuleUpdateOne {
-	_u.mutation.SetAction(v)
-	return _u
-}
-
-// SetNillableAction sets the "action" field if the given value is not nil.
-func (_u *RuleUpdateOne) SetNillableAction(v *rule.Action) *RuleUpdateOne {
-	if v != nil {
-		_u.SetAction(*v)
-	}
-	return _u
-}
-
 // SetConnectionID sets the "connection_id" field.
 func (_u *RuleUpdateOne) SetConnectionID(v int) *RuleUpdateOne {
 	_u.mutation.SetConnectionID(v)
@@ -388,6 +434,21 @@ func (_u *RuleUpdateOne) SetConnection(v *Connection) *RuleUpdateOne {
 	return _u.SetConnectionID(v.ID)
 }
 
+// AddActionStepIDs adds the "action_steps" edge to the RuleActionStep entity by IDs.
+func (_u *RuleUpdateOne) AddActionStepIDs(ids ...int) *RuleUpdateOne {
+	_u.mutation.AddActionStepIDs(ids...)
+	return _u
+}
+
+// AddActionSteps adds the "action_steps" edges to the RuleActionStep entity.
+func (_u *RuleUpdateOne) AddActionSteps(v ...*RuleActionStep) *RuleUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddActionStepIDs(ids...)
+}
+
 // Mutation returns the RuleMutation object of the builder.
 func (_u *RuleUpdateOne) Mutation() *RuleMutation {
 	return _u.mutation
@@ -397,6 +458,27 @@ func (_u *RuleUpdateOne) Mutation() *RuleMutation {
 func (_u *RuleUpdateOne) ClearConnection() *RuleUpdateOne {
 	_u.mutation.ClearConnection()
 	return _u
+}
+
+// ClearActionSteps clears all "action_steps" edges to the RuleActionStep entity.
+func (_u *RuleUpdateOne) ClearActionSteps() *RuleUpdateOne {
+	_u.mutation.ClearActionSteps()
+	return _u
+}
+
+// RemoveActionStepIDs removes the "action_steps" edge to RuleActionStep entities by IDs.
+func (_u *RuleUpdateOne) RemoveActionStepIDs(ids ...int) *RuleUpdateOne {
+	_u.mutation.RemoveActionStepIDs(ids...)
+	return _u
+}
+
+// RemoveActionSteps removes "action_steps" edges to RuleActionStep entities.
+func (_u *RuleUpdateOne) RemoveActionSteps(v ...*RuleActionStep) *RuleUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveActionStepIDs(ids...)
 }
 
 // Where appends a list predicates to the RuleUpdate builder.
@@ -455,11 +537,6 @@ func (_u *RuleUpdateOne) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Rule.name": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.Action(); ok {
-		if err := rule.ActionValidator(v); err != nil {
-			return &ValidationError{Name: "action", err: fmt.Errorf(`ent: validator failed for field "Rule.action": %w`, err)}
-		}
-	}
 	if v, ok := _u.mutation.LibraryKey(); ok {
 		if err := rule.LibraryKeyValidator(v); err != nil {
 			return &ValidationError{Name: "library_key", err: fmt.Errorf(`ent: validator failed for field "Rule.library_key": %w`, err)}
@@ -514,9 +591,6 @@ func (_u *RuleUpdateOne) sqlSave(ctx context.Context) (_node *Rule, err error) {
 	if value, ok := _u.mutation.Enabled(); ok {
 		_spec.SetField(rule.FieldEnabled, field.TypeBool, value)
 	}
-	if value, ok := _u.mutation.Action(); ok {
-		_spec.SetField(rule.FieldAction, field.TypeEnum, value)
-	}
 	if value, ok := _u.mutation.LibraryKey(); ok {
 		_spec.SetField(rule.FieldLibraryKey, field.TypeString, value)
 	}
@@ -548,6 +622,51 @@ func (_u *RuleUpdateOne) sqlSave(ctx context.Context) (_node *Rule, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(connection.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ActionStepsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   rule.ActionStepsTable,
+			Columns: []string{rule.ActionStepsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ruleactionstep.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedActionStepsIDs(); len(nodes) > 0 && !_u.mutation.ActionStepsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   rule.ActionStepsTable,
+			Columns: []string{rule.ActionStepsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ruleactionstep.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ActionStepsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   rule.ActionStepsTable,
+			Columns: []string{rule.ActionStepsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ruleactionstep.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

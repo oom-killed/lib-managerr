@@ -18,6 +18,7 @@ import (
 	"github.com/oom-killed/lib-managerr/ent/connection"
 	"github.com/oom-killed/lib-managerr/ent/library"
 	"github.com/oom-killed/lib-managerr/ent/rule"
+	"github.com/oom-killed/lib-managerr/ent/ruleactionstep"
 )
 
 // Client is the client that holds all ent builders.
@@ -31,6 +32,8 @@ type Client struct {
 	Library *LibraryClient
 	// Rule is the client for interacting with the Rule builders.
 	Rule *RuleClient
+	// RuleActionStep is the client for interacting with the RuleActionStep builders.
+	RuleActionStep *RuleActionStepClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -45,6 +48,7 @@ func (c *Client) init() {
 	c.Connection = NewConnectionClient(c.config)
 	c.Library = NewLibraryClient(c.config)
 	c.Rule = NewRuleClient(c.config)
+	c.RuleActionStep = NewRuleActionStepClient(c.config)
 }
 
 type (
@@ -135,11 +139,12 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:        ctx,
-		config:     cfg,
-		Connection: NewConnectionClient(cfg),
-		Library:    NewLibraryClient(cfg),
-		Rule:       NewRuleClient(cfg),
+		ctx:            ctx,
+		config:         cfg,
+		Connection:     NewConnectionClient(cfg),
+		Library:        NewLibraryClient(cfg),
+		Rule:           NewRuleClient(cfg),
+		RuleActionStep: NewRuleActionStepClient(cfg),
 	}, nil
 }
 
@@ -157,11 +162,12 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:        ctx,
-		config:     cfg,
-		Connection: NewConnectionClient(cfg),
-		Library:    NewLibraryClient(cfg),
-		Rule:       NewRuleClient(cfg),
+		ctx:            ctx,
+		config:         cfg,
+		Connection:     NewConnectionClient(cfg),
+		Library:        NewLibraryClient(cfg),
+		Rule:           NewRuleClient(cfg),
+		RuleActionStep: NewRuleActionStepClient(cfg),
 	}, nil
 }
 
@@ -193,6 +199,7 @@ func (c *Client) Use(hooks ...Hook) {
 	c.Connection.Use(hooks...)
 	c.Library.Use(hooks...)
 	c.Rule.Use(hooks...)
+	c.RuleActionStep.Use(hooks...)
 }
 
 // Intercept adds the query interceptors to all the entity clients.
@@ -201,6 +208,7 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	c.Connection.Intercept(interceptors...)
 	c.Library.Intercept(interceptors...)
 	c.Rule.Intercept(interceptors...)
+	c.RuleActionStep.Intercept(interceptors...)
 }
 
 // Mutate implements the ent.Mutator interface.
@@ -212,6 +220,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Library.mutate(ctx, m)
 	case *RuleMutation:
 		return c.Rule.mutate(ctx, m)
+	case *RuleActionStepMutation:
+		return c.RuleActionStep.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
 	}
@@ -655,6 +665,22 @@ func (c *RuleClient) QueryConnection(_m *Rule) *ConnectionQuery {
 	return query
 }
 
+// QueryActionSteps queries the action_steps edge of a Rule.
+func (c *RuleClient) QueryActionSteps(_m *Rule) *RuleActionStepQuery {
+	query := (&RuleActionStepClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(rule.Table, rule.FieldID, id),
+			sqlgraph.To(ruleactionstep.Table, ruleactionstep.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, rule.ActionStepsTable, rule.ActionStepsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *RuleClient) Hooks() []Hook {
 	return c.hooks.Rule
@@ -680,12 +706,161 @@ func (c *RuleClient) mutate(ctx context.Context, m *RuleMutation) (Value, error)
 	}
 }
 
+// RuleActionStepClient is a client for the RuleActionStep schema.
+type RuleActionStepClient struct {
+	config
+}
+
+// NewRuleActionStepClient returns a client for the RuleActionStep from the given config.
+func NewRuleActionStepClient(c config) *RuleActionStepClient {
+	return &RuleActionStepClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `ruleactionstep.Hooks(f(g(h())))`.
+func (c *RuleActionStepClient) Use(hooks ...Hook) {
+	c.hooks.RuleActionStep = append(c.hooks.RuleActionStep, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `ruleactionstep.Intercept(f(g(h())))`.
+func (c *RuleActionStepClient) Intercept(interceptors ...Interceptor) {
+	c.inters.RuleActionStep = append(c.inters.RuleActionStep, interceptors...)
+}
+
+// Create returns a builder for creating a RuleActionStep entity.
+func (c *RuleActionStepClient) Create() *RuleActionStepCreate {
+	mutation := newRuleActionStepMutation(c.config, OpCreate)
+	return &RuleActionStepCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of RuleActionStep entities.
+func (c *RuleActionStepClient) CreateBulk(builders ...*RuleActionStepCreate) *RuleActionStepCreateBulk {
+	return &RuleActionStepCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *RuleActionStepClient) MapCreateBulk(slice any, setFunc func(*RuleActionStepCreate, int)) *RuleActionStepCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &RuleActionStepCreateBulk{err: fmt.Errorf("calling to RuleActionStepClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*RuleActionStepCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &RuleActionStepCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for RuleActionStep.
+func (c *RuleActionStepClient) Update() *RuleActionStepUpdate {
+	mutation := newRuleActionStepMutation(c.config, OpUpdate)
+	return &RuleActionStepUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *RuleActionStepClient) UpdateOne(_m *RuleActionStep) *RuleActionStepUpdateOne {
+	mutation := newRuleActionStepMutation(c.config, OpUpdateOne, withRuleActionStep(_m))
+	return &RuleActionStepUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *RuleActionStepClient) UpdateOneID(id int) *RuleActionStepUpdateOne {
+	mutation := newRuleActionStepMutation(c.config, OpUpdateOne, withRuleActionStepID(id))
+	return &RuleActionStepUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for RuleActionStep.
+func (c *RuleActionStepClient) Delete() *RuleActionStepDelete {
+	mutation := newRuleActionStepMutation(c.config, OpDelete)
+	return &RuleActionStepDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *RuleActionStepClient) DeleteOne(_m *RuleActionStep) *RuleActionStepDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *RuleActionStepClient) DeleteOneID(id int) *RuleActionStepDeleteOne {
+	builder := c.Delete().Where(ruleactionstep.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &RuleActionStepDeleteOne{builder}
+}
+
+// Query returns a query builder for RuleActionStep.
+func (c *RuleActionStepClient) Query() *RuleActionStepQuery {
+	return &RuleActionStepQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeRuleActionStep},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a RuleActionStep entity by its id.
+func (c *RuleActionStepClient) Get(ctx context.Context, id int) (*RuleActionStep, error) {
+	return c.Query().Where(ruleactionstep.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *RuleActionStepClient) GetX(ctx context.Context, id int) *RuleActionStep {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryRule queries the rule edge of a RuleActionStep.
+func (c *RuleActionStepClient) QueryRule(_m *RuleActionStep) *RuleQuery {
+	query := (&RuleClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(ruleactionstep.Table, ruleactionstep.FieldID, id),
+			sqlgraph.To(rule.Table, rule.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, ruleactionstep.RuleTable, ruleactionstep.RuleColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *RuleActionStepClient) Hooks() []Hook {
+	return c.hooks.RuleActionStep
+}
+
+// Interceptors returns the client interceptors.
+func (c *RuleActionStepClient) Interceptors() []Interceptor {
+	return c.inters.RuleActionStep
+}
+
+func (c *RuleActionStepClient) mutate(ctx context.Context, m *RuleActionStepMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&RuleActionStepCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&RuleActionStepUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&RuleActionStepUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&RuleActionStepDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown RuleActionStep mutation op: %q", m.Op())
+	}
+}
+
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Connection, Library, Rule []ent.Hook
+		Connection, Library, Rule, RuleActionStep []ent.Hook
 	}
 	inters struct {
-		Connection, Library, Rule []ent.Interceptor
+		Connection, Library, Rule, RuleActionStep []ent.Interceptor
 	}
 )

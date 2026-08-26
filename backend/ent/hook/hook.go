@@ -45,6 +45,18 @@ func (f RuleFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RuleMutation", m)
 }
 
+// The RuleActionStepFunc type is an adapter to allow the use of ordinary
+// function as RuleActionStep mutator.
+type RuleActionStepFunc func(context.Context, *ent.RuleActionStepMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f RuleActionStepFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.RuleActionStepMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RuleActionStepMutation", m)
+}
+
 // Condition is a hook condition function.
 type Condition func(context.Context, ent.Mutation) bool
 

@@ -36,10 +36,20 @@ function Rules() {
 		await refetch();
 	};
 
-	const actionLabel = (rule: Rule) => {
-		const option = RULE_ACTION_OPTIONS.find((o) => o.value === rule.action);
-		return option ? t(option.labelKey) : rule.action;
+	const actionLabel = (step: Rule["actions"][number]) => {
+		const option = RULE_ACTION_OPTIONS.find((o) => o.value === step.action);
+		return option ? t(option.labelKey) : step.action;
 	};
+
+	const actionsSummary = (rule: Rule) =>
+		rule.actions.length === 0
+			? t("rules.noActions")
+			: rule.actions
+					.map(
+						(step) =>
+							`${actionLabel(step)} (${step.delayAmount} ${t(`rules.delayUnits.${step.delayUnit}`)})`,
+					)
+					.join(", ");
 
 	return (
 		<section>
@@ -69,7 +79,7 @@ function Rules() {
 											? t("rules.enabledLabel")
 											: t("rules.disabledLabel")}
 										{" · "}
-										{actionLabel(rule)}
+										{actionsSummary(rule)}
 									</div>
 								</button>
 								<Button variant="secondary" onClick={() => handleDelete(rule)}>

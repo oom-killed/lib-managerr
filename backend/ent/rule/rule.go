@@ -23,8 +23,6 @@ const (
 	FieldName = "name"
 	// FieldEnabled holds the string denoting the enabled field in the database.
 	FieldEnabled = "enabled"
-	// FieldAction holds the string denoting the action field in the database.
-	FieldAction = "action"
 	// FieldConnectionID holds the string denoting the connection_id field in the database.
 	FieldConnectionID = "connection_id"
 	// FieldLibraryKey holds the string denoting the library_key field in the database.
@@ -33,6 +31,8 @@ const (
 	FieldGranularity = "granularity"
 	// EdgeConnection holds the string denoting the connection edge name in mutations.
 	EdgeConnection = "connection"
+	// EdgeActionSteps holds the string denoting the action_steps edge name in mutations.
+	EdgeActionSteps = "action_steps"
 	// Table holds the table name of the rule in the database.
 	Table = "rules"
 	// ConnectionTable is the table that holds the connection relation/edge.
@@ -42,6 +42,13 @@ const (
 	ConnectionInverseTable = "connections"
 	// ConnectionColumn is the table column denoting the connection relation/edge.
 	ConnectionColumn = "connection_id"
+	// ActionStepsTable is the table that holds the action_steps relation/edge.
+	ActionStepsTable = "rule_action_steps"
+	// ActionStepsInverseTable is the table name for the RuleActionStep entity.
+	// It exists in this package in order to avoid circular dependency with the "ruleactionstep" package.
+	ActionStepsInverseTable = "rule_action_steps"
+	// ActionStepsColumn is the table column denoting the action_steps relation/edge.
+	ActionStepsColumn = "rule_id"
 )
 
 // Columns holds all SQL columns for rule fields.
@@ -51,7 +58,6 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldName,
 	FieldEnabled,
-	FieldAction,
 	FieldConnectionID,
 	FieldLibraryKey,
 	FieldGranularity,
@@ -81,35 +87,6 @@ var (
 	// LibraryKeyValidator is a validator for the "library_key" field. It is called by the builders before save.
 	LibraryKeyValidator func(string) error
 )
-
-// Action defines the type for the "action" enum field.
-type Action string
-
-// ActionDoNothing is the default value of the Action enum.
-const DefaultAction = ActionDoNothing
-
-// Action values.
-const (
-	ActionChangeQualityAndSearch  Action = "change_quality_and_search"
-	ActionDelete                  Action = "delete"
-	ActionDoNothing               Action = "do_nothing"
-	ActionUnmonitorAndDeleteFiles Action = "unmonitor_and_delete_files"
-	ActionUnmonitorAndKeepFiles   Action = "unmonitor_and_keep_files"
-)
-
-func (a Action) String() string {
-	return string(a)
-}
-
-// ActionValidator is a validator for the "action" field enum values. It is called by the builders before save.
-func ActionValidator(a Action) error {
-	switch a {
-	case ActionChangeQualityAndSearch, ActionDelete, ActionDoNothing, ActionUnmonitorAndDeleteFiles, ActionUnmonitorAndKeepFiles:
-		return nil
-	default:
-		return fmt.Errorf("rule: invalid enum value for action field: %q", a)
-	}
-}
 
 // Granularity defines the type for the "granularity" enum field.
 type Granularity string
@@ -162,11 +139,6 @@ func ByEnabled(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldEnabled, opts...).ToFunc()
 }
 
-// ByAction orders the results by the action field.
-func ByAction(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldAction, opts...).ToFunc()
-}
-
 // ByConnectionID orders the results by the connection_id field.
 func ByConnectionID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldConnectionID, opts...).ToFunc()
@@ -188,10 +160,31 @@ func ByConnectionField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newConnectionStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByActionStepsCount orders the results by action_steps count.
+func ByActionStepsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newActionStepsStep(), opts...)
+	}
+}
+
+// ByActionSteps orders the results by action_steps terms.
+func ByActionSteps(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newActionStepsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newConnectionStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ConnectionInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, ConnectionTable, ConnectionColumn),
+	)
+}
+func newActionStepsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ActionStepsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ActionStepsTable, ActionStepsColumn),
 	)
 }

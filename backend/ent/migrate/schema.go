@@ -65,7 +65,6 @@ var (
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString},
 		{Name: "enabled", Type: field.TypeBool, Default: true},
-		{Name: "action", Type: field.TypeEnum, Enums: []string{"change_quality_and_search", "delete", "do_nothing", "unmonitor_and_delete_files", "unmonitor_and_keep_files"}, Default: "do_nothing"},
 		{Name: "library_key", Type: field.TypeString},
 		{Name: "granularity", Type: field.TypeEnum, Nullable: true, Enums: []string{"season", "episode"}},
 		{Name: "connection_id", Type: field.TypeInt},
@@ -78,9 +77,34 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "rules_connections_rules",
-				Columns:    []*schema.Column{RulesColumns[8]},
+				Columns:    []*schema.Column{RulesColumns[7]},
 				RefColumns: []*schema.Column{ConnectionsColumns[0]},
 				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// RuleActionStepsColumns holds the columns for the "rule_action_steps" table.
+	RuleActionStepsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "position", Type: field.TypeInt},
+		{Name: "delay_amount", Type: field.TypeInt},
+		{Name: "delay_unit", Type: field.TypeEnum, Enums: []string{"hours", "days", "weeks", "months"}},
+		{Name: "action", Type: field.TypeEnum, Enums: []string{"change_quality_and_search", "delete", "do_nothing", "unmonitor_and_delete_files", "unmonitor_and_keep_files"}, Default: "do_nothing"},
+		{Name: "rule_id", Type: field.TypeInt},
+	}
+	// RuleActionStepsTable holds the schema information for the "rule_action_steps" table.
+	RuleActionStepsTable = &schema.Table{
+		Name:       "rule_action_steps",
+		Columns:    RuleActionStepsColumns,
+		PrimaryKey: []*schema.Column{RuleActionStepsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "rule_action_steps_rules_action_steps",
+				Columns:    []*schema.Column{RuleActionStepsColumns[7]},
+				RefColumns: []*schema.Column{RulesColumns[0]},
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -89,10 +113,12 @@ var (
 		ConnectionsTable,
 		LibrariesTable,
 		RulesTable,
+		RuleActionStepsTable,
 	}
 )
 
 func init() {
 	LibrariesTable.ForeignKeys[0].RefTable = ConnectionsTable
 	RulesTable.ForeignKeys[0].RefTable = ConnectionsTable
+	RuleActionStepsTable.ForeignKeys[0].RefTable = RulesTable
 }

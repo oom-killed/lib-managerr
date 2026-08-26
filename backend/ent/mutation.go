@@ -15,6 +15,7 @@ import (
 	"github.com/oom-killed/lib-managerr/ent/library"
 	"github.com/oom-killed/lib-managerr/ent/predicate"
 	"github.com/oom-killed/lib-managerr/ent/rule"
+	"github.com/oom-killed/lib-managerr/ent/ruleactionstep"
 )
 
 const (
@@ -26,9 +27,10 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeConnection = "Connection"
-	TypeLibrary    = "Library"
-	TypeRule       = "Rule"
+	TypeConnection     = "Connection"
+	TypeLibrary        = "Library"
+	TypeRule           = "Rule"
+	TypeRuleActionStep = "RuleActionStep"
 )
 
 // ConnectionMutation represents an operation that mutates the Connection nodes in the graph.
@@ -1613,22 +1615,24 @@ func (m *LibraryMutation) ResetEdge(name string) error {
 // RuleMutation represents an operation that mutates the Rule nodes in the graph.
 type RuleMutation struct {
 	config
-	op                Op
-	typ               string
-	id                *int
-	created_at        *time.Time
-	updated_at        *time.Time
-	name              *string
-	enabled           *bool
-	action            *rule.Action
-	library_key       *string
-	granularity       *rule.Granularity
-	clearedFields     map[string]struct{}
-	connection        *int
-	clearedconnection bool
-	done              bool
-	oldValue          func(context.Context) (*Rule, error)
-	predicates        []predicate.Rule
+	op                  Op
+	typ                 string
+	id                  *int
+	created_at          *time.Time
+	updated_at          *time.Time
+	name                *string
+	enabled             *bool
+	library_key         *string
+	granularity         *rule.Granularity
+	clearedFields       map[string]struct{}
+	connection          *int
+	clearedconnection   bool
+	action_steps        map[int]struct{}
+	removedaction_steps map[int]struct{}
+	clearedaction_steps bool
+	done                bool
+	oldValue            func(context.Context) (*Rule, error)
+	predicates          []predicate.Rule
 }
 
 var _ ent.Mutation = (*RuleMutation)(nil)
@@ -1873,42 +1877,6 @@ func (m *RuleMutation) ResetEnabled() {
 	m.enabled = nil
 }
 
-// SetAction sets the "action" field.
-func (m *RuleMutation) SetAction(r rule.Action) {
-	m.action = &r
-}
-
-// Action returns the value of the "action" field in the mutation.
-func (m *RuleMutation) Action() (r rule.Action, exists bool) {
-	v := m.action
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldAction returns the old "action" field's value of the Rule entity.
-// If the Rule object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *RuleMutation) OldAction(ctx context.Context) (v rule.Action, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldAction is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldAction requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldAction: %w", err)
-	}
-	return oldValue.Action, nil
-}
-
-// ResetAction resets all changes to the "action" field.
-func (m *RuleMutation) ResetAction() {
-	m.action = nil
-}
-
 // SetConnectionID sets the "connection_id" field.
 func (m *RuleMutation) SetConnectionID(i int) {
 	m.connection = &i
@@ -2057,6 +2025,60 @@ func (m *RuleMutation) ResetConnection() {
 	m.clearedconnection = false
 }
 
+// AddActionStepIDs adds the "action_steps" edge to the RuleActionStep entity by ids.
+func (m *RuleMutation) AddActionStepIDs(ids ...int) {
+	if m.action_steps == nil {
+		m.action_steps = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.action_steps[ids[i]] = struct{}{}
+	}
+}
+
+// ClearActionSteps clears the "action_steps" edge to the RuleActionStep entity.
+func (m *RuleMutation) ClearActionSteps() {
+	m.clearedaction_steps = true
+}
+
+// ActionStepsCleared reports if the "action_steps" edge to the RuleActionStep entity was cleared.
+func (m *RuleMutation) ActionStepsCleared() bool {
+	return m.clearedaction_steps
+}
+
+// RemoveActionStepIDs removes the "action_steps" edge to the RuleActionStep entity by IDs.
+func (m *RuleMutation) RemoveActionStepIDs(ids ...int) {
+	if m.removedaction_steps == nil {
+		m.removedaction_steps = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.action_steps, ids[i])
+		m.removedaction_steps[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedActionSteps returns the removed IDs of the "action_steps" edge to the RuleActionStep entity.
+func (m *RuleMutation) RemovedActionStepsIDs() (ids []int) {
+	for id := range m.removedaction_steps {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ActionStepsIDs returns the "action_steps" edge IDs in the mutation.
+func (m *RuleMutation) ActionStepsIDs() (ids []int) {
+	for id := range m.action_steps {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetActionSteps resets all changes to the "action_steps" edge.
+func (m *RuleMutation) ResetActionSteps() {
+	m.action_steps = nil
+	m.clearedaction_steps = false
+	m.removedaction_steps = nil
+}
+
 // Where appends a list predicates to the RuleMutation builder.
 func (m *RuleMutation) Where(ps ...predicate.Rule) {
 	m.predicates = append(m.predicates, ps...)
@@ -2091,7 +2113,7 @@ func (m *RuleMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *RuleMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 7)
 	if m.created_at != nil {
 		fields = append(fields, rule.FieldCreatedAt)
 	}
@@ -2103,9 +2125,6 @@ func (m *RuleMutation) Fields() []string {
 	}
 	if m.enabled != nil {
 		fields = append(fields, rule.FieldEnabled)
-	}
-	if m.action != nil {
-		fields = append(fields, rule.FieldAction)
 	}
 	if m.connection != nil {
 		fields = append(fields, rule.FieldConnectionID)
@@ -2132,8 +2151,6 @@ func (m *RuleMutation) Field(name string) (ent.Value, bool) {
 		return m.Name()
 	case rule.FieldEnabled:
 		return m.Enabled()
-	case rule.FieldAction:
-		return m.Action()
 	case rule.FieldConnectionID:
 		return m.ConnectionID()
 	case rule.FieldLibraryKey:
@@ -2157,8 +2174,6 @@ func (m *RuleMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldName(ctx)
 	case rule.FieldEnabled:
 		return m.OldEnabled(ctx)
-	case rule.FieldAction:
-		return m.OldAction(ctx)
 	case rule.FieldConnectionID:
 		return m.OldConnectionID(ctx)
 	case rule.FieldLibraryKey:
@@ -2201,13 +2216,6 @@ func (m *RuleMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetEnabled(v)
-		return nil
-	case rule.FieldAction:
-		v, ok := value.(rule.Action)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetAction(v)
 		return nil
 	case rule.FieldConnectionID:
 		v, ok := value.(int)
@@ -2303,9 +2311,6 @@ func (m *RuleMutation) ResetField(name string) error {
 	case rule.FieldEnabled:
 		m.ResetEnabled()
 		return nil
-	case rule.FieldAction:
-		m.ResetAction()
-		return nil
 	case rule.FieldConnectionID:
 		m.ResetConnectionID()
 		return nil
@@ -2321,9 +2326,12 @@ func (m *RuleMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *RuleMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.connection != nil {
 		edges = append(edges, rule.EdgeConnection)
+	}
+	if m.action_steps != nil {
+		edges = append(edges, rule.EdgeActionSteps)
 	}
 	return edges
 }
@@ -2336,27 +2344,47 @@ func (m *RuleMutation) AddedIDs(name string) []ent.Value {
 		if id := m.connection; id != nil {
 			return []ent.Value{*id}
 		}
+	case rule.EdgeActionSteps:
+		ids := make([]ent.Value, 0, len(m.action_steps))
+		for id := range m.action_steps {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *RuleMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
+	if m.removedaction_steps != nil {
+		edges = append(edges, rule.EdgeActionSteps)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *RuleMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case rule.EdgeActionSteps:
+		ids := make([]ent.Value, 0, len(m.removedaction_steps))
+		for id := range m.removedaction_steps {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *RuleMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedconnection {
 		edges = append(edges, rule.EdgeConnection)
+	}
+	if m.clearedaction_steps {
+		edges = append(edges, rule.EdgeActionSteps)
 	}
 	return edges
 }
@@ -2367,6 +2395,8 @@ func (m *RuleMutation) EdgeCleared(name string) bool {
 	switch name {
 	case rule.EdgeConnection:
 		return m.clearedconnection
+	case rule.EdgeActionSteps:
+		return m.clearedaction_steps
 	}
 	return false
 }
@@ -2389,6 +2419,782 @@ func (m *RuleMutation) ResetEdge(name string) error {
 	case rule.EdgeConnection:
 		m.ResetConnection()
 		return nil
+	case rule.EdgeActionSteps:
+		m.ResetActionSteps()
+		return nil
 	}
 	return fmt.Errorf("unknown Rule edge %s", name)
+}
+
+// RuleActionStepMutation represents an operation that mutates the RuleActionStep nodes in the graph.
+type RuleActionStepMutation struct {
+	config
+	op              Op
+	typ             string
+	id              *int
+	created_at      *time.Time
+	updated_at      *time.Time
+	position        *int
+	addposition     *int
+	delay_amount    *int
+	adddelay_amount *int
+	delay_unit      *ruleactionstep.DelayUnit
+	action          *ruleactionstep.Action
+	clearedFields   map[string]struct{}
+	rule            *int
+	clearedrule     bool
+	done            bool
+	oldValue        func(context.Context) (*RuleActionStep, error)
+	predicates      []predicate.RuleActionStep
+}
+
+var _ ent.Mutation = (*RuleActionStepMutation)(nil)
+
+// ruleactionstepOption allows management of the mutation configuration using functional options.
+type ruleactionstepOption func(*RuleActionStepMutation)
+
+// newRuleActionStepMutation creates new mutation for the RuleActionStep entity.
+func newRuleActionStepMutation(c config, op Op, opts ...ruleactionstepOption) *RuleActionStepMutation {
+	m := &RuleActionStepMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeRuleActionStep,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withRuleActionStepID sets the ID field of the mutation.
+func withRuleActionStepID(id int) ruleactionstepOption {
+	return func(m *RuleActionStepMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *RuleActionStep
+		)
+		m.oldValue = func(ctx context.Context) (*RuleActionStep, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().RuleActionStep.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withRuleActionStep sets the old RuleActionStep of the mutation.
+func withRuleActionStep(node *RuleActionStep) ruleactionstepOption {
+	return func(m *RuleActionStepMutation) {
+		m.oldValue = func(context.Context) (*RuleActionStep, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m RuleActionStepMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m RuleActionStepMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *RuleActionStepMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *RuleActionStepMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().RuleActionStep.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *RuleActionStepMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *RuleActionStepMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the RuleActionStep entity.
+// If the RuleActionStep object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RuleActionStepMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *RuleActionStepMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *RuleActionStepMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *RuleActionStepMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the RuleActionStep entity.
+// If the RuleActionStep object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RuleActionStepMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *RuleActionStepMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetPosition sets the "position" field.
+func (m *RuleActionStepMutation) SetPosition(i int) {
+	m.position = &i
+	m.addposition = nil
+}
+
+// Position returns the value of the "position" field in the mutation.
+func (m *RuleActionStepMutation) Position() (r int, exists bool) {
+	v := m.position
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPosition returns the old "position" field's value of the RuleActionStep entity.
+// If the RuleActionStep object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RuleActionStepMutation) OldPosition(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPosition is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPosition requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPosition: %w", err)
+	}
+	return oldValue.Position, nil
+}
+
+// AddPosition adds i to the "position" field.
+func (m *RuleActionStepMutation) AddPosition(i int) {
+	if m.addposition != nil {
+		*m.addposition += i
+	} else {
+		m.addposition = &i
+	}
+}
+
+// AddedPosition returns the value that was added to the "position" field in this mutation.
+func (m *RuleActionStepMutation) AddedPosition() (r int, exists bool) {
+	v := m.addposition
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPosition resets all changes to the "position" field.
+func (m *RuleActionStepMutation) ResetPosition() {
+	m.position = nil
+	m.addposition = nil
+}
+
+// SetDelayAmount sets the "delay_amount" field.
+func (m *RuleActionStepMutation) SetDelayAmount(i int) {
+	m.delay_amount = &i
+	m.adddelay_amount = nil
+}
+
+// DelayAmount returns the value of the "delay_amount" field in the mutation.
+func (m *RuleActionStepMutation) DelayAmount() (r int, exists bool) {
+	v := m.delay_amount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDelayAmount returns the old "delay_amount" field's value of the RuleActionStep entity.
+// If the RuleActionStep object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RuleActionStepMutation) OldDelayAmount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDelayAmount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDelayAmount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDelayAmount: %w", err)
+	}
+	return oldValue.DelayAmount, nil
+}
+
+// AddDelayAmount adds i to the "delay_amount" field.
+func (m *RuleActionStepMutation) AddDelayAmount(i int) {
+	if m.adddelay_amount != nil {
+		*m.adddelay_amount += i
+	} else {
+		m.adddelay_amount = &i
+	}
+}
+
+// AddedDelayAmount returns the value that was added to the "delay_amount" field in this mutation.
+func (m *RuleActionStepMutation) AddedDelayAmount() (r int, exists bool) {
+	v := m.adddelay_amount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDelayAmount resets all changes to the "delay_amount" field.
+func (m *RuleActionStepMutation) ResetDelayAmount() {
+	m.delay_amount = nil
+	m.adddelay_amount = nil
+}
+
+// SetDelayUnit sets the "delay_unit" field.
+func (m *RuleActionStepMutation) SetDelayUnit(ru ruleactionstep.DelayUnit) {
+	m.delay_unit = &ru
+}
+
+// DelayUnit returns the value of the "delay_unit" field in the mutation.
+func (m *RuleActionStepMutation) DelayUnit() (r ruleactionstep.DelayUnit, exists bool) {
+	v := m.delay_unit
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDelayUnit returns the old "delay_unit" field's value of the RuleActionStep entity.
+// If the RuleActionStep object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RuleActionStepMutation) OldDelayUnit(ctx context.Context) (v ruleactionstep.DelayUnit, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDelayUnit is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDelayUnit requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDelayUnit: %w", err)
+	}
+	return oldValue.DelayUnit, nil
+}
+
+// ResetDelayUnit resets all changes to the "delay_unit" field.
+func (m *RuleActionStepMutation) ResetDelayUnit() {
+	m.delay_unit = nil
+}
+
+// SetAction sets the "action" field.
+func (m *RuleActionStepMutation) SetAction(r ruleactionstep.Action) {
+	m.action = &r
+}
+
+// Action returns the value of the "action" field in the mutation.
+func (m *RuleActionStepMutation) Action() (r ruleactionstep.Action, exists bool) {
+	v := m.action
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAction returns the old "action" field's value of the RuleActionStep entity.
+// If the RuleActionStep object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RuleActionStepMutation) OldAction(ctx context.Context) (v ruleactionstep.Action, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAction is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAction requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAction: %w", err)
+	}
+	return oldValue.Action, nil
+}
+
+// ResetAction resets all changes to the "action" field.
+func (m *RuleActionStepMutation) ResetAction() {
+	m.action = nil
+}
+
+// SetRuleID sets the "rule_id" field.
+func (m *RuleActionStepMutation) SetRuleID(i int) {
+	m.rule = &i
+}
+
+// RuleID returns the value of the "rule_id" field in the mutation.
+func (m *RuleActionStepMutation) RuleID() (r int, exists bool) {
+	v := m.rule
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRuleID returns the old "rule_id" field's value of the RuleActionStep entity.
+// If the RuleActionStep object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RuleActionStepMutation) OldRuleID(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRuleID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRuleID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRuleID: %w", err)
+	}
+	return oldValue.RuleID, nil
+}
+
+// ResetRuleID resets all changes to the "rule_id" field.
+func (m *RuleActionStepMutation) ResetRuleID() {
+	m.rule = nil
+}
+
+// ClearRule clears the "rule" edge to the Rule entity.
+func (m *RuleActionStepMutation) ClearRule() {
+	m.clearedrule = true
+	m.clearedFields[ruleactionstep.FieldRuleID] = struct{}{}
+}
+
+// RuleCleared reports if the "rule" edge to the Rule entity was cleared.
+func (m *RuleActionStepMutation) RuleCleared() bool {
+	return m.clearedrule
+}
+
+// RuleIDs returns the "rule" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// RuleID instead. It exists only for internal usage by the builders.
+func (m *RuleActionStepMutation) RuleIDs() (ids []int) {
+	if id := m.rule; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetRule resets all changes to the "rule" edge.
+func (m *RuleActionStepMutation) ResetRule() {
+	m.rule = nil
+	m.clearedrule = false
+}
+
+// Where appends a list predicates to the RuleActionStepMutation builder.
+func (m *RuleActionStepMutation) Where(ps ...predicate.RuleActionStep) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the RuleActionStepMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *RuleActionStepMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.RuleActionStep, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *RuleActionStepMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *RuleActionStepMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (RuleActionStep).
+func (m *RuleActionStepMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *RuleActionStepMutation) Fields() []string {
+	fields := make([]string, 0, 7)
+	if m.created_at != nil {
+		fields = append(fields, ruleactionstep.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, ruleactionstep.FieldUpdatedAt)
+	}
+	if m.position != nil {
+		fields = append(fields, ruleactionstep.FieldPosition)
+	}
+	if m.delay_amount != nil {
+		fields = append(fields, ruleactionstep.FieldDelayAmount)
+	}
+	if m.delay_unit != nil {
+		fields = append(fields, ruleactionstep.FieldDelayUnit)
+	}
+	if m.action != nil {
+		fields = append(fields, ruleactionstep.FieldAction)
+	}
+	if m.rule != nil {
+		fields = append(fields, ruleactionstep.FieldRuleID)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *RuleActionStepMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case ruleactionstep.FieldCreatedAt:
+		return m.CreatedAt()
+	case ruleactionstep.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case ruleactionstep.FieldPosition:
+		return m.Position()
+	case ruleactionstep.FieldDelayAmount:
+		return m.DelayAmount()
+	case ruleactionstep.FieldDelayUnit:
+		return m.DelayUnit()
+	case ruleactionstep.FieldAction:
+		return m.Action()
+	case ruleactionstep.FieldRuleID:
+		return m.RuleID()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *RuleActionStepMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case ruleactionstep.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case ruleactionstep.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case ruleactionstep.FieldPosition:
+		return m.OldPosition(ctx)
+	case ruleactionstep.FieldDelayAmount:
+		return m.OldDelayAmount(ctx)
+	case ruleactionstep.FieldDelayUnit:
+		return m.OldDelayUnit(ctx)
+	case ruleactionstep.FieldAction:
+		return m.OldAction(ctx)
+	case ruleactionstep.FieldRuleID:
+		return m.OldRuleID(ctx)
+	}
+	return nil, fmt.Errorf("unknown RuleActionStep field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *RuleActionStepMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case ruleactionstep.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case ruleactionstep.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case ruleactionstep.FieldPosition:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPosition(v)
+		return nil
+	case ruleactionstep.FieldDelayAmount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDelayAmount(v)
+		return nil
+	case ruleactionstep.FieldDelayUnit:
+		v, ok := value.(ruleactionstep.DelayUnit)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDelayUnit(v)
+		return nil
+	case ruleactionstep.FieldAction:
+		v, ok := value.(ruleactionstep.Action)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAction(v)
+		return nil
+	case ruleactionstep.FieldRuleID:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRuleID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown RuleActionStep field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *RuleActionStepMutation) AddedFields() []string {
+	var fields []string
+	if m.addposition != nil {
+		fields = append(fields, ruleactionstep.FieldPosition)
+	}
+	if m.adddelay_amount != nil {
+		fields = append(fields, ruleactionstep.FieldDelayAmount)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *RuleActionStepMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case ruleactionstep.FieldPosition:
+		return m.AddedPosition()
+	case ruleactionstep.FieldDelayAmount:
+		return m.AddedDelayAmount()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *RuleActionStepMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case ruleactionstep.FieldPosition:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPosition(v)
+		return nil
+	case ruleactionstep.FieldDelayAmount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDelayAmount(v)
+		return nil
+	}
+	return fmt.Errorf("unknown RuleActionStep numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *RuleActionStepMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *RuleActionStepMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *RuleActionStepMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown RuleActionStep nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *RuleActionStepMutation) ResetField(name string) error {
+	switch name {
+	case ruleactionstep.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case ruleactionstep.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case ruleactionstep.FieldPosition:
+		m.ResetPosition()
+		return nil
+	case ruleactionstep.FieldDelayAmount:
+		m.ResetDelayAmount()
+		return nil
+	case ruleactionstep.FieldDelayUnit:
+		m.ResetDelayUnit()
+		return nil
+	case ruleactionstep.FieldAction:
+		m.ResetAction()
+		return nil
+	case ruleactionstep.FieldRuleID:
+		m.ResetRuleID()
+		return nil
+	}
+	return fmt.Errorf("unknown RuleActionStep field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *RuleActionStepMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.rule != nil {
+		edges = append(edges, ruleactionstep.EdgeRule)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *RuleActionStepMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case ruleactionstep.EdgeRule:
+		if id := m.rule; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *RuleActionStepMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *RuleActionStepMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *RuleActionStepMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedrule {
+		edges = append(edges, ruleactionstep.EdgeRule)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *RuleActionStepMutation) EdgeCleared(name string) bool {
+	switch name {
+	case ruleactionstep.EdgeRule:
+		return m.clearedrule
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *RuleActionStepMutation) ClearEdge(name string) error {
+	switch name {
+	case ruleactionstep.EdgeRule:
+		m.ClearRule()
+		return nil
+	}
+	return fmt.Errorf("unknown RuleActionStep unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *RuleActionStepMutation) ResetEdge(name string) error {
+	switch name {
+	case ruleactionstep.EdgeRule:
+		m.ResetRule()
+		return nil
+	}
+	return fmt.Errorf("unknown RuleActionStep edge %s", name)
 }

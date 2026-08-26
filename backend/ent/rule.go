@@ -26,8 +26,6 @@ type Rule struct {
 	Name string `json:"name,omitempty"`
 	// Enabled holds the value of the "enabled" field.
 	Enabled bool `json:"enabled,omitempty"`
-	// Action holds the value of the "action" field.
-	Action rule.Action `json:"action,omitempty"`
 	// ConnectionID holds the value of the "connection_id" field.
 	ConnectionID int `json:"connectionId,omitempty"`
 	// LibraryKey holds the value of the "library_key" field.
@@ -44,9 +42,11 @@ type Rule struct {
 type RuleEdges struct {
 	// Connection holds the value of the connection edge.
 	Connection *Connection `json:"connection,omitempty"`
+	// ActionSteps holds the value of the action_steps edge.
+	ActionSteps []*RuleActionStep `json:"action_steps,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // ConnectionOrErr returns the Connection value or an error if the edge
@@ -60,6 +60,15 @@ func (e RuleEdges) ConnectionOrErr() (*Connection, error) {
 	return nil, &NotLoadedError{edge: "connection"}
 }
 
+// ActionStepsOrErr returns the ActionSteps value or an error if the edge
+// was not loaded in eager-loading.
+func (e RuleEdges) ActionStepsOrErr() ([]*RuleActionStep, error) {
+	if e.loadedTypes[1] {
+		return e.ActionSteps, nil
+	}
+	return nil, &NotLoadedError{edge: "action_steps"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Rule) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -69,7 +78,7 @@ func (*Rule) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case rule.FieldID, rule.FieldConnectionID:
 			values[i] = new(sql.NullInt64)
-		case rule.FieldName, rule.FieldAction, rule.FieldLibraryKey, rule.FieldGranularity:
+		case rule.FieldName, rule.FieldLibraryKey, rule.FieldGranularity:
 			values[i] = new(sql.NullString)
 		case rule.FieldCreatedAt, rule.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -118,12 +127,6 @@ func (_m *Rule) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Enabled = value.Bool
 			}
-		case rule.FieldAction:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field action", values[i])
-			} else if value.Valid {
-				_m.Action = rule.Action(value.String)
-			}
 		case rule.FieldConnectionID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field connection_id", values[i])
@@ -161,6 +164,11 @@ func (_m *Rule) QueryConnection() *ConnectionQuery {
 	return NewRuleClient(_m.config).QueryConnection(_m)
 }
 
+// QueryActionSteps queries the "action_steps" edge of the Rule entity.
+func (_m *Rule) QueryActionSteps() *RuleActionStepQuery {
+	return NewRuleClient(_m.config).QueryActionSteps(_m)
+}
+
 // Update returns a builder for updating this Rule.
 // Note that you need to call Rule.Unwrap() before calling this method if this Rule
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -195,9 +203,6 @@ func (_m *Rule) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("enabled=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Enabled))
-	builder.WriteString(", ")
-	builder.WriteString("action=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Action))
 	builder.WriteString(", ")
 	builder.WriteString("connection_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ConnectionID))

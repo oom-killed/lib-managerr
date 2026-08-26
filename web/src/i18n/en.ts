@@ -53,6 +53,8 @@ export type Dict = {
 		modalTitleEdit: string;
 		enabledLabel: string;
 		disabledLabel: string;
+		noActions: string;
+		addAction: string;
 		fields: {
 			name: string;
 			enabled: string;
@@ -60,6 +62,9 @@ export type Dict = {
 			connection: string;
 			library: string;
 			granularity: string;
+			actions: string;
+			delayAmount: string;
+			delayUnit: string;
 		};
 		actions: {
 			changeQualityAndSearch: string;
@@ -71,6 +76,12 @@ export type Dict = {
 		granularity: {
 			season: string;
 			episode: string;
+		};
+		delayUnits: {
+			hours: string;
+			days: string;
+			weeks: string;
+			months: string;
 		};
 	};
 	settings: {
@@ -158,6 +169,8 @@ export const dict: Dict = {
 		modalTitleEdit: "Edit Rule",
 		enabledLabel: "Enabled",
 		disabledLabel: "Disabled",
+		noActions: "No actions",
+		addAction: "Add Action",
 		fields: {
 			name: "Name",
 			enabled: "Enabled",
@@ -165,6 +178,9 @@ export const dict: Dict = {
 			connection: "Connection",
 			library: "Library",
 			granularity: "Applies to",
+			actions: "Actions",
+			delayAmount: "Delay",
+			delayUnit: "Unit",
 		},
 		actions: {
 			changeQualityAndSearch: "Change quality profile and search",
@@ -176,6 +192,12 @@ export const dict: Dict = {
 		granularity: {
 			season: "Seasons",
 			episode: "Episodes",
+		},
+		delayUnits: {
+			hours: "hours",
+			days: "days",
+			weeks: "weeks",
+			months: "months",
 		},
 	},
 	settings: {

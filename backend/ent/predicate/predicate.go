@@ -14,3 +14,6 @@ type Library func(*sql.Selector)
 
 // Rule is the predicate function for rule builders.
 type Rule func(*sql.Selector)
+
+// RuleActionStep is the predicate function for ruleactionstep builders.
+type RuleActionStep func(*sql.Selector)

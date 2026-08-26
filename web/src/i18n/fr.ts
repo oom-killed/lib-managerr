@@ -57,6 +57,8 @@ export const dict: Dict = {
 		modalTitleEdit: "Modifier la règle",
 		enabledLabel: "Activée",
 		disabledLabel: "Désactivée",
+		noActions: "Aucune action",
+		addAction: "Ajouter une action",
 		fields: {
 			name: "Nom",
 			enabled: "Activée",
@@ -64,6 +66,9 @@ export const dict: Dict = {
 			connection: "Connexion",
 			library: "Bibliothèque",
 			granularity: "S'applique à",
+			actions: "Actions",
+			delayAmount: "Délai",
+			delayUnit: "Unité",
 		},
 		actions: {
 			changeQualityAndSearch: "Changer le profil de qualité et rechercher",
@@ -75,6 +80,12 @@ export const dict: Dict = {
 		granularity: {
 			season: "Saisons",
 			episode: "Épisodes",
+		},
+		delayUnits: {
+			hours: "heures",
+			days: "jours",
+			weeks: "semaines",
+			months: "mois",
 		},
 	},
 	settings: {

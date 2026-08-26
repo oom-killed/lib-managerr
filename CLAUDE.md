@@ -308,6 +308,23 @@ show library to a movie library). `RuleForm.tsx` shows the season/episode `Selec
 when the selected library isn't a show library, so switching a rule's target library away from TV shows
 can't leave a stale season/episode choice sitting unsent in the form state.
 
+**`Rule.action` became a list** (`RuleActionStep`, a new entity — e.g. "unmonitor after 1 day, then delete
+files after 1 month") once a rule needed to do more than one thing over time; the single-enum `action` field
+described two paragraphs up no longer exists on `Rule`. Each step has `delay_amount`/`delay_unit`
+(hours/days/weeks/months) plus its own `action` (same five-value vocabulary, now living on `RuleActionStep`
+instead), and a `position` field that preserves entry order — deliberately not derived from `delay_amount`,
+since two steps can share a delay and the form's list order is the more meaningful source of truth than a
+computed sort. The edge back to `Rule` is `entsql.OnDelete(entsql.Cascade)`, so deleting a rule cleans up its
+steps automatically rather than requiring the handler to delete them first or leaving orphaned rows.
+`PUT`/`POST /api/rules` always replace the *entire* step list atomically (`setActionSteps` in
+`internal/api/rules.go`: delete all existing steps for the rule, then recreate from the submitted array) —
+simpler and safer than diffing against what's stored, since the form always submits the complete list
+anyway. The API composes a `ruleOut` struct (`*ent.Rule` embedded plus an `Actions []ruleActionStepOut`
+field) rather than relying on ent's default edge-eager-loading JSON shape, so the frontend gets a flat
+`actions` array instead of nesting under `edges.action_steps`. Each step's action is still filtered by the
+rule's library media type exactly as before, just applied per-row in `RuleForm.tsx`'s repeatable list instead
+of to a single select.
+
 ## Logging
 
 Built on the stdlib `log/slog` — no logging dependency. `backend/internal/logging.New()` builds the logger

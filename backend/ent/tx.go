@@ -18,6 +18,8 @@ type Tx struct {
 	Library *LibraryClient
 	// Rule is the client for interacting with the Rule builders.
 	Rule *RuleClient
+	// RuleActionStep is the client for interacting with the RuleActionStep builders.
+	RuleActionStep *RuleActionStepClient
 
 	// lazily loaded.
 	client     *Client
@@ -152,6 +154,7 @@ func (tx *Tx) init() {
 	tx.Connection = NewConnectionClient(tx.config)
 	tx.Library = NewLibraryClient(tx.config)
 	tx.Rule = NewRuleClient(tx.config)
+	tx.RuleActionStep = NewRuleActionStepClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.

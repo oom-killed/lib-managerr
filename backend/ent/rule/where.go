@@ -240,26 +240,6 @@ func EnabledNEQ(v bool) predicate.Rule {
 	return predicate.Rule(sql.FieldNEQ(FieldEnabled, v))
 }
 
-// ActionEQ applies the EQ predicate on the "action" field.
-func ActionEQ(v Action) predicate.Rule {
-	return predicate.Rule(sql.FieldEQ(FieldAction, v))
-}
-
-// ActionNEQ applies the NEQ predicate on the "action" field.
-func ActionNEQ(v Action) predicate.Rule {
-	return predicate.Rule(sql.FieldNEQ(FieldAction, v))
-}
-
-// ActionIn applies the In predicate on the "action" field.
-func ActionIn(vs ...Action) predicate.Rule {
-	return predicate.Rule(sql.FieldIn(FieldAction, vs...))
-}
-
-// ActionNotIn applies the NotIn predicate on the "action" field.
-func ActionNotIn(vs ...Action) predicate.Rule {
-	return predicate.Rule(sql.FieldNotIn(FieldAction, vs...))
-}
-
 // ConnectionIDEQ applies the EQ predicate on the "connection_id" field.
 func ConnectionIDEQ(v int) predicate.Rule {
 	return predicate.Rule(sql.FieldEQ(FieldConnectionID, v))
@@ -390,6 +370,29 @@ func HasConnection() predicate.Rule {
 func HasConnectionWith(preds ...predicate.Connection) predicate.Rule {
 	return predicate.Rule(func(s *sql.Selector) {
 		step := newConnectionStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasActionSteps applies the HasEdge predicate on the "action_steps" edge.
+func HasActionSteps() predicate.Rule {
+	return predicate.Rule(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ActionStepsTable, ActionStepsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasActionStepsWith applies the HasEdge predicate on the "action_steps" edge with a given conditions (other predicates).
+func HasActionStepsWith(preds ...predicate.RuleActionStep) predicate.Rule {
+	return predicate.Rule(func(s *sql.Selector) {
+		step := newActionStepsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
