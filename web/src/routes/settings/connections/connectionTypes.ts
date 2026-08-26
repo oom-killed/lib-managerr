@@ -29,6 +29,7 @@ export const CONNECTION_TYPE_OPTIONS: {
 }[] = [
 	{ value: "plex", label: "Plex" },
 	{ value: "radarr", label: "Radarr" },
+	{ value: "sonarr", label: "Sonarr" },
 ];
 
 export const CONNECTION_TYPE_FIELDS: Record<
@@ -55,6 +56,25 @@ export const CONNECTION_TYPE_FIELDS: Record<
 		},
 	],
 	radarr: [
+		{ key: "name", labelKey: "settings.connections.fields.name", kind: "text" },
+		{ key: "host", labelKey: "settings.connections.fields.host", kind: "text" },
+		{
+			key: "port",
+			labelKey: "settings.connections.fields.port",
+			kind: "number",
+		},
+		{
+			key: "ssl",
+			labelKey: "settings.connections.fields.ssl",
+			kind: "checkbox",
+		},
+		{
+			key: "token",
+			labelKey: "settings.connections.fields.apiKey",
+			kind: "password",
+		},
+	],
+	sonarr: [
 		{ key: "name", labelKey: "settings.connections.fields.name", kind: "text" },
 		{ key: "host", labelKey: "settings.connections.fields.host", kind: "text" },
 		{

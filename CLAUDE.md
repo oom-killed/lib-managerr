@@ -202,6 +202,12 @@ type, each with its own `labelKey` per field. Radarr connections don't support `
 (Radarr manages movies directly, it has no "library sections" the way Plex does) — those endpoints' `default`
 dispatch case returns "unsupported connection type", surfaced as a normal `502` on the frontend, not a crash.
 
+`sonarr` (added after Radarr) confirmed the pattern holds for a second follow-on type: same shape as Radarr
+exactly (`internal/sonarr.Ping` → `/api/v3/system/status` with `X-Api-Key`, one `case` in
+`testConnectionType`, reuses the existing `apiKey` label), no new client-shape decisions needed. Both Radarr
+and Sonarr connections are automatically excluded from the root Libraries page's picker with zero extra
+code, since `LIBRARY_CAPABLE_CONNECTION_TYPES` (`web/src/api/connections.ts`) is still just `["plex"]`.
+
 **"Connection" ≠ "Library"**: a Connection is credentials for reaching *any* external service — media
 servers (Plex, eventually Jellyfin/Emby) that have browsable library sections, *and* data-only services
 (Radarr, Sonarr, Seerr) that don't, used only to fetch additional data. Adding Radarr revealed that Settings'

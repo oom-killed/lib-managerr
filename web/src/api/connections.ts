@@ -2,7 +2,7 @@
 // Libraries page uses fetchConnections + fetchConnectionLibraries to build
 // its connection/library selector.
 
-export type ConnectionType = "plex" | "radarr";
+export type ConnectionType = "plex" | "radarr" | "sonarr";
 
 // Media-server-type connections (Plex, and eventually Jellyfin/Emby) have
 // browsable library sections; data-only connections (Radarr, Sonarr,
