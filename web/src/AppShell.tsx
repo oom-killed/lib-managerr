@@ -9,9 +9,9 @@ export function AppShell(props: { children?: JSX.Element }) {
 	const isActive = (href: string) => location.pathname === href;
 
 	return (
-		<div class="flex min-h-screen flex-col bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-50">
+		<div class="flex h-screen flex-col bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-50">
 			<Navbar>lib-managerr</Navbar>
-			<div class="flex flex-1">
+			<div class="flex min-h-0 flex-1">
 				<Sidebar>
 					<NavLink
 						as={A}
@@ -40,7 +40,7 @@ export function AppShell(props: { children?: JSX.Element }) {
 						/>
 					</NavGroup>
 				</Sidebar>
-				<main class="flex-1 p-4">{props.children}</main>
+				<main class="flex-1 overflow-y-auto p-4">{props.children}</main>
 			</div>
 		</div>
 	);
