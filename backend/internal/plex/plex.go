@@ -112,6 +112,11 @@ type Item struct {
 	// match this item against other services (e.g. Radarr). Not exposed
 	// over the API — it's a correlation key, not display data.
 	TmdbID int `json:"-"`
+	// TvdbID is theTVDB id parsed from Plex's Guid list, used to match show
+	// items against Sonarr (Sonarr's Series resource carries a tvdbId, not
+	// a tmdbId). Not exposed over the API — a correlation key, not display
+	// data.
+	TvdbID int `json:"-"`
 }
 
 type guidRef struct {
@@ -145,8 +150,16 @@ type libraryItemsResponse struct {
 }
 
 func tmdbIDFromGuids(guids []guidRef) int {
+	return guidIDWithPrefix(guids, "tmdb://")
+}
+
+func tvdbIDFromGuids(guids []guidRef) int {
+	return guidIDWithPrefix(guids, "tvdb://")
+}
+
+func guidIDWithPrefix(guids []guidRef, prefix string) int {
 	for _, g := range guids {
-		if id, ok := strings.CutPrefix(g.ID, "tmdb://"); ok {
+		if id, ok := strings.CutPrefix(g.ID, prefix); ok {
 			if n, err := strconv.Atoi(id); err == nil {
 				return n
 			}
@@ -186,6 +199,7 @@ func ListLibraryItems(ctx context.Context, cfg Config, sectionKey string, offset
 			SeasonCount:  m.ChildCount,
 			EpisodeCount: m.LeafCount,
 			TmdbID:       tmdbIDFromGuids(m.Guid),
+			TvdbID:       tvdbIDFromGuids(m.Guid),
 		})
 	}
 	return items, parsed.MediaContainer.TotalSize, nil

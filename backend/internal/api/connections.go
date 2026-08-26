@@ -102,9 +102,18 @@ type radarrInfo struct {
 	QualityProfile string `json:"qualityProfile,omitempty"`
 }
 
+// sonarrInfo mirrors radarrInfo, for show items matched against Sonarr's
+// tracked series list.
+type sonarrInfo struct {
+	Tracked        bool   `json:"tracked"`
+	Monitored      bool   `json:"monitored,omitempty"`
+	QualityProfile string `json:"qualityProfile,omitempty"`
+}
+
 type itemOut struct {
 	plex.Item
 	Radarr *radarrInfo `json:"radarr,omitempty"`
+	Sonarr *sonarrInfo `json:"sonarr,omitempty"`
 }
 
 // enrichWithRadarr adds Radarr tracking info to every movie item, matched
@@ -114,18 +123,13 @@ type itemOut struct {
 // Radarr unreachable — since asserting "not tracked" there would be a
 // guess, not a fact. This never fails the underlying library-items
 // request; it just leaves items unenriched on any of those failures.
-func enrichWithRadarr(ctx context.Context, client *ent.Client, radarrCache *radarr.Cache, logger *slog.Logger, items []plex.Item) []itemOut {
-	out := make([]itemOut, len(items))
-	for i, it := range items {
-		out[i] = itemOut{Item: it}
-	}
-
+func enrichWithRadarr(ctx context.Context, client *ent.Client, radarrCache *radarr.Cache, logger *slog.Logger, out []itemOut) {
 	radarrConn, err := client.Connection.Query().Where(connection.TypeEQ(connection.TypeRadarr)).First(ctx)
 	if err != nil {
 		if !ent.IsNotFound(err) {
 			logger.Warn("radarr enrichment: lookup connection failed", "error", err)
 		}
-		return out
+		return
 	}
 
 	cfg := radarr.Config{Host: radarrConn.Host, Port: radarrConn.Port, SSL: radarrConn.Ssl, APIKey: radarrConn.Token}
@@ -133,7 +137,7 @@ func enrichWithRadarr(ctx context.Context, client *ent.Client, radarrCache *rada
 	movies, profiles, err := radarrCache.GetMoviesAndProfiles(ctx, cfg)
 	if err != nil {
 		logger.Warn("radarr enrichment: fetch movies/profiles failed", "error", err)
-		return out
+		return
 	}
 
 	profileNames := make(map[int]string, len(profiles))
@@ -156,7 +160,47 @@ func enrichWithRadarr(ctx context.Context, client *ent.Client, radarrCache *rada
 		}
 		out[i].Radarr = &radarrInfo{Tracked: true, Monitored: m.Monitored, QualityProfile: profileNames[m.QualityProfileID]}
 	}
-	return out
+}
+
+// enrichWithSonarr mirrors enrichWithRadarr for show items, matched by
+// TVDB id against Sonarr's tracked series list.
+func enrichWithSonarr(ctx context.Context, client *ent.Client, sonarrCache *sonarr.Cache, logger *slog.Logger, out []itemOut) {
+	sonarrConn, err := client.Connection.Query().Where(connection.TypeEQ(connection.TypeSonarr)).First(ctx)
+	if err != nil {
+		if !ent.IsNotFound(err) {
+			logger.Warn("sonarr enrichment: lookup connection failed", "error", err)
+		}
+		return
+	}
+
+	cfg := sonarr.Config{Host: sonarrConn.Host, Port: sonarrConn.Port, SSL: sonarrConn.Ssl, APIKey: sonarrConn.Token}
+
+	series, profiles, err := sonarrCache.GetSeriesAndProfiles(ctx, cfg)
+	if err != nil {
+		logger.Warn("sonarr enrichment: fetch series/profiles failed", "error", err)
+		return
+	}
+
+	profileNames := make(map[int]string, len(profiles))
+	for _, p := range profiles {
+		profileNames[p.ID] = p.Name
+	}
+	byTvdbID := make(map[int]sonarr.Series, len(series))
+	for _, s := range series {
+		byTvdbID[s.TvdbID] = s
+	}
+
+	for i := range out {
+		if out[i].Type != "show" {
+			continue
+		}
+		s, ok := byTvdbID[out[i].TvdbID] // TvdbID zero-value (no guid) just won't match, same as any other miss
+		if !ok {
+			out[i].Sonarr = &sonarrInfo{Tracked: false}
+			continue
+		}
+		out[i].Sonarr = &sonarrInfo{Tracked: true, Monitored: s.Monitored, QualityProfile: profileNames[s.QualityProfileID]}
+	}
 }
 
 type libraryItemsResult struct {
@@ -169,7 +213,7 @@ type libraryItemsResult struct {
 const defaultLibraryItemsLimit = 20
 
 // RegisterConnectionRoutes wires the Connection endpoints onto mux.
-func RegisterConnectionRoutes(mux *http.ServeMux, client *ent.Client, radarrCache *radarr.Cache) {
+func RegisterConnectionRoutes(mux *http.ServeMux, client *ent.Client, radarrCache *radarr.Cache, sonarrCache *sonarr.Cache) {
 	mux.HandleFunc("GET /api/connections", func(w http.ResponseWriter, r *http.Request) {
 		conns, err := client.Connection.Query().All(r.Context())
 		if err != nil {
@@ -388,7 +432,12 @@ func RegisterConnectionRoutes(mux *http.ServeMux, client *ent.Client, radarrCach
 			return
 		}
 
-		enriched := enrichWithRadarr(r.Context(), client, radarrCache, logger, items)
+		enriched := make([]itemOut, len(items))
+		for i, it := range items {
+			enriched[i] = itemOut{Item: it}
+		}
+		enrichWithRadarr(r.Context(), client, radarrCache, logger, enriched)
+		enrichWithSonarr(r.Context(), client, sonarrCache, logger, enriched)
 		writeJSON(w, http.StatusOK, libraryItemsResult{Items: enriched, Total: total, Offset: offset, Limit: limit})
 	})
 }

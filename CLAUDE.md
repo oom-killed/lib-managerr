@@ -183,6 +183,18 @@ Deliberately just an in-memory struct, not a general caching layer or anything p
 staleness (a Radarr change can take up to 60s to show here), acceptable for what's a display feature, not
 a source of truth.
 
+**Sonarr enrichment on show items** mirrors Radarr's movie enrichment exactly, but matched by TVDB id instead
+of TMDB id — Sonarr's `Series` resource carries a `tvdbId`, not a `tmdbId`. `plex.Item.TvdbID` (parsed from
+the `tvdb://<id>` entry in the same `Guid` list already fetched for TMDB matching) is matched against
+`backend/internal/sonarr.ListSeries`'s `tvdbId` field in `enrichWithSonarr`
+(`backend/internal/api/connections.go`), which looks up the first `Connection` of type `sonarr` the same way
+`enrichWithRadarr` looks up `radarr`. Same `Tracked`/`Monitored`/`QualityProfile` shape and the same
+always-set-once-reachable semantics as `radarrInfo`, and the same `backend/internal/sonarr.Cache` (60s TTL,
+same shape as `radarr.Cache`) to avoid re-downloading Sonarr's entire series catalog per page. Both
+enrichments run independently over the same `itemOut` slice — `enrichWithRadarr` only touches `type=="movie"`
+items, `enrichWithSonarr` only `type=="show"` items — so a library can be enriched by both, either, or
+neither depending on which connections exist.
+
 **Adding a new connection type without heavy refactoring**: the `Connection` entity's fields (`type`, `name`,
 `host`, `port`, `ssl`, `token`) are deliberately generic across host-based server integrations, not
 Plex-specific — a new type is a new `ent/schema/connection.go` enum value plus, on the frontend, a new

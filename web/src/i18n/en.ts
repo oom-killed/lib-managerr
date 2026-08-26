@@ -34,6 +34,9 @@ export type Dict = {
 		radarrMonitored: string;
 		radarrUnmonitored: string;
 		radarrNotTracked: string;
+		sonarrMonitored: string;
+		sonarrUnmonitored: string;
+		sonarrNotTracked: string;
 	};
 	settings: {
 		general: {
@@ -100,6 +103,9 @@ export const dict: Dict = {
 		radarrMonitored: "Monitored",
 		radarrUnmonitored: "Unmonitored",
 		radarrNotTracked: "Not tracked in Radarr",
+		sonarrMonitored: "Monitored",
+		sonarrUnmonitored: "Unmonitored",
+		sonarrNotTracked: "Not tracked in Sonarr",
 	},
 	settings: {
 		general: {

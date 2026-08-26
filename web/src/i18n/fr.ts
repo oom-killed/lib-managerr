@@ -37,6 +37,9 @@ export const dict: Dict = {
 		radarrMonitored: "Surveillé",
 		radarrUnmonitored: "Non surveillé",
 		radarrNotTracked: "Absent de Radarr",
+		sonarrMonitored: "Surveillé",
+		sonarrUnmonitored: "Non surveillé",
+		sonarrNotTracked: "Absent de Sonarr",
 	},
 	settings: {
 		general: {

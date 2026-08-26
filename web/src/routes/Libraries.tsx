@@ -190,6 +190,23 @@ function Libraries() {
 													</div>
 												)}
 											</Show>
+											<Show when={item.sonarr}>
+												{(sonarr) => (
+													<div class="text-sm text-neutral-500 dark:text-neutral-400">
+														{sonarr().tracked
+															? sonarr().monitored
+																? t("libraries.sonarrMonitored")
+																: t("libraries.sonarrUnmonitored")
+															: t("libraries.sonarrNotTracked")}
+														<Show
+															when={sonarr().tracked && sonarr().qualityProfile}
+														>
+															{" · "}
+															{sonarr().qualityProfile}
+														</Show>
+													</div>
+												)}
+											</Show>
 										</li>
 									)}
 								</For>

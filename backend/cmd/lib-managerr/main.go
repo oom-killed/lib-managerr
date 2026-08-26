@@ -14,6 +14,7 @@ import (
 	"github.com/oom-killed/lib-managerr/internal/entdb"
 	"github.com/oom-killed/lib-managerr/internal/logging"
 	"github.com/oom-killed/lib-managerr/internal/radarr"
+	"github.com/oom-killed/lib-managerr/internal/sonarr"
 	"github.com/oom-killed/lib-managerr/internal/webui"
 )
 
@@ -68,7 +69,8 @@ func main() {
 	})
 
 	radarrCache := radarr.NewCache(60 * time.Second)
-	api.RegisterConnectionRoutes(mux, client, radarrCache)
+	sonarrCache := sonarr.NewCache(60 * time.Second)
+	api.RegisterConnectionRoutes(mux, client, radarrCache, sonarrCache)
 
 	mux.Handle("/", spaHandler(webui.FS()))
 

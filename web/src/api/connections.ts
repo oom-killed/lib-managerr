@@ -136,6 +136,11 @@ export type LibraryItem = {
 		monitored?: boolean;
 		qualityProfile?: string;
 	};
+	sonarr?: {
+		tracked: boolean;
+		monitored?: boolean;
+		qualityProfile?: string;
+	};
 };
 
 export type LibraryItemsPage = {
